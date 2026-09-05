@@ -83,16 +83,6 @@ def build_fasterq_dump_cmd(
         cmd.extend(extra_args)
     return cmd
 
-
-def check_tool_available(cmd: List[str]) -> bool:
-    """Check if a command exists by running --version."""
-    try:
-        subprocess.run(cmd + ["--version"], capture_output=True, check=True)
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-
-
 def fetch_srr_list(accession: str) -> List[str]:
     """Fetch all SRR run accessions for a given BioProject or SRA Study accession."""
     logger.info(f"Fetching SRR list for accession: {accession}")
