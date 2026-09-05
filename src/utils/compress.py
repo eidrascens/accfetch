@@ -19,9 +19,12 @@ def compress_fastq_file(
             fastq_path, gz_path, compression_level
         )
     )
-    start = time.time()
     try:
-        with open(fastq_path, "rb") as f_in, open(gz_path, "wb") as f_out:
+        with open(
+                fastq_path, "rb"
+            ) as f_in, open(
+                gz_path, "wb"
+            ) as f_out:
             with gzip_module.GzipFile(
                 filename="",
                 mode="wb",
@@ -29,15 +32,18 @@ def compress_fastq_file(
                 fileobj=f_out
             ) as gz_out:
                 copyfileobj(f_in, gz_out)
-        duration = time.time() - start
         remove(fastq_path)
-    except Exception as e:
-        log.err(f"Compression failed for {fastq_path}: {e}")
-        if exists(gz_path):
-            try:
-                remove(gz_path)
-            except:
-                pass
-        return False
+    except Exception as err:
+        log.err(
+            err, "Compression failed for %s" % (fastq_path)
+        )
+    else:
+        return True
 
-    return True
+    try:
+        remove(gz_path)
+    except FileNotFoundError:
+        pass
+
+    return False
+
