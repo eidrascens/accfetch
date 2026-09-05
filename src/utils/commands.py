@@ -1,19 +1,30 @@
+from pathlib import Path
+from typing import Optional
+
+
 def build_prefetch_cmd(
-    srr: str,
-    output_dir: str,
-    max_size: Optional[str],
-    extra_args: Optional[List[str]],
-    prefetch_path: Optional[str],
-    conda_env: Optional[str],
-) -> List[str]:
+        prefetch_path: str,
+        srr: str,
+        output_dir: Path,
+        max_size: Optional[str],
+        extra_args: Optional[list[str]],
+        conda_env: Optional[str],
+    ) -> list[str]:
     """Build the command list for running prefetch."""
-    if prefetch_path:
-        cmd = [prefetch_path, srr, "-O", output_dir]
-    elif conda_env:
-        cmd = ["conda", "run", "-n", conda_env,
-               "prefetch", srr, "-O", output_dir]
-    else:
-        cmd = ["prefetch", srr, "-O", output_dir]
+    BASE_PREFETCH_CMD: list[str | Path] = [
+            prefetch_path,
+            srr,
+            "-O",
+            output_dir
+        ]
+    cmd: list[str] = BASE_PREFETCH_CMD
+    if conda_env:
+        cmd: list[str | Path]  = [
+                "conda",
+                "run",
+                "-n",
+                conda_env,
+            ].extend(BASE_PREFETCH_CMD)
 
     if max_size:
         cmd.extend(["--max-size", max_size])
@@ -23,27 +34,32 @@ def build_prefetch_cmd(
 
 
 def build_fasterq_dump_cmd(
-    sra_file: str,
-    output_dir: str,
-    threads: int,
-    fasterq_dump_path: Optional[str],
-    conda_env: Optional[str],
-    gzip: bool,
-    extra_args: Optional[List[str]],
-) -> List[str]:
+        sra_file: str,
+        output_dir: str,
+        threads: int,
+        fasterq_dump_path: Optional[str],
+        conda_env: Optional[str],
+        extra_args: Optional[list[str]],
+    ) -> list[str]:
     """Build the command for fasterq-dump."""
-    if fasterq_dump_path:
-        cmd = [fasterq_dump_path, sra_file, "-O",
-               output_dir, "--threads", str(threads)]
+    BASE_FD_CMD: list[str | Path] = [
+            fasterq_dump_path,
+            sra_file,
+            "-O",
+            output_dir,
+            "--threads",
+            f"{threads}",
+            "--gzip"
+        ]
+    cmd: list[str | Path] = BASE_FD_CMD
     elif conda_env:
-        cmd = ["conda", "run", "-n", conda_env, "fasterq-dump",
-               sra_file, "-O", output_dir, "--threads", str(threads)]
-    else:
-        cmd = ["fasterq-dump", sra_file, "-O",
-               output_dir, "--threads", str(threads)]
+        cmd: list[str | Path] = [
+                "conda",
+                "run",
+                "-n",
+                conda_env,
+            ].extend(BASE_FD_CMD)
 
-    if gzip:
-        cmd.append("--gzip")
     if extra_args:
         cmd.extend(extra_args)
     return cmd
