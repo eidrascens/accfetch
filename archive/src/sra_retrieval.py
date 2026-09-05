@@ -38,7 +38,7 @@ Requirements:
 - 'requests' library (pip install requests)
 
 Usage examples:
-    # Only convert existing .sra files 
+    # Only convert existing .sra files
     python sra_retrieval.py SRPXXXXXX \
         --sra-toolkit-bin /path/to/bin \
         --fasterq-dump \
@@ -47,7 +47,7 @@ Usage examples:
         --output-dir /scratch1/user/fastq \
         --parallel-jobs 4 --threads 8
 
-    # Enable download before conversion  
+    # Enable download before conversion
     python sra_retrieval.py SRPXXXXXX \
         --sra-toolkit-bin /path/to/bin \
         --prefetch \
@@ -56,7 +56,7 @@ Usage examples:
         --remove-sra \
         --output-dir /scratch1/user/fastq \
         --parallel-jobs 4 --threads 8
-        
+
     # Submit as a SLURM array job
     python sra_retrieval.py SRPXXXXXX \
     --sra-toolkit-bin /path/to/bin \
@@ -103,21 +103,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# NCBI E-utilities
-ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-
-# QoS mapping for Saliksik partitions
-PARTITION_QOS_MAP = {
-    "debug": "debug_default",
-    "batch": "batch_default",
-    "serial": "serial_default",
-    "gpu": "gpu-p40_default",
-    "gpu_a100": "gpu-a100_default",
-}
-
-# Default minimum disk space in GB
-DEFAULT_MIN_DISK_GB = 20.0
 
 
 # ----------------------------------------------------------------------
