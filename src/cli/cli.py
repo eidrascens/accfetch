@@ -1,3 +1,48 @@
+"""
+Usage examples:
+    # Only convert existing .sra files
+    python sra_retrieval.py SRPXXXXXX \
+        --sra-toolkit-bin /path/to/bin \
+        --fasterq-dump \
+        --compression-level 6 \
+        --remove-sra \
+        --output-dir /scratch1/user/fastq \
+        --parallel-jobs 4 --threads 8
+
+    # Enable download before conversion
+    python sra_retrieval.py SRPXXXXXX \
+        --sra-toolkit-bin /path/to/bin \
+        --prefetch \
+        --fasterq-dump \
+        --compression-level 6 \
+        --remove-sra \
+        --output-dir /scratch1/user/fastq \
+        --parallel-jobs 4 --threads 8
+
+    # Submit as a SLURM array job
+    python sra_retrieval.py SRPXXXXXX \
+    --sra-toolkit-bin /path/to/bin \
+    --prefetch \
+    --fasterq-dump \
+    --compression-level 6 \
+    --remove-sra \
+    --output-dir /scratch1/user/fastq \
+    --scheduler slurm \
+    --array-size 20 \
+    --partition batch \
+    --mem 16G \
+    --time 24:00:00 \
+    --parallel-jobs 2 \
+    --threads 4
+
+    # Dry run to see commands
+    python sra_retrieval.py SRPXXXXXX \
+        --sra-toolkit-bin /path/to/bin \
+        --prefetch \
+        --fasterq-dump \
+        --dry-run
+"""
+
 parser = argparse.ArgumentParser(
     description="SRA retrieval and conversion (prefetch + fasterq-dump) for a BioProject/Study."
 )
