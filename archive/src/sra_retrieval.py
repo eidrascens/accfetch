@@ -84,7 +84,6 @@ Usage examples:
 import argparse
 import concurrent.futures
 import json
-import logging
 import os
 import shutil
 import subprocess
@@ -95,13 +94,6 @@ from typing import List, Optional, Dict, Any
 
 import requests
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
 
 
 
