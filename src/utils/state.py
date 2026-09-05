@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Self, Any
 from json import dump, load
-
-from os.path import exists
+from os import replace
 
 from src.utils.log.logger import Logger
 
@@ -22,8 +21,8 @@ class State:
         """Load state from JSON file."""
 
         try:
-            with open(self.state_file, "r") as f:
-                return json.load(f)
+            with open(self.state_file, "r", encoding="utf-8") as file:
+                return load(file)
         except (FileNotFoundError) as _:
             self.log.warn(
                 "Error reading %s, starting fresh." % (
@@ -34,23 +33,28 @@ class State:
     def save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
         tmp_file = f"{self.state_file}.tmp"
-        with open(tmp_file, "w") as f:
-            dump(self.state, f, indent=2)
-        os.replace(tmp_file, state_file)
+        with open(tmp_file, "w", encoding="utf-8") as file:
+            dump(self.state, file, indent=4)
+        replace(tmp_file, self.state_file)
 
 
     def update_state(
-        self: Self,
-        srr: str,
-        key: str,
-        value: bool = True,
-    ) -> None:
+            self: Self,
+            srr: str,
+            key: str,
+            value: bool = True
+        ) -> None:
         """Update state for a given SRR."""
-        if srr not in state:
-            state[srr] = {}
-        state[srr][key] = value
+        if srr not in self.state:
+            self.state[srr] = {}
+        self.state[srr][key] = value
 
 
-    def get_state(self: Self, , srr: str, key: str, default: bool = False) -> bool:
+    def get_state(
+            self: Self,
+            srr: str,
+            key: str,
+            default: bool = False
+        ) -> bool:
         """Get state value for SRR and key."""
-        return state.get(srr, {}).get(key, default)
+        return self.state.get(srr, {}).get(key, default)
