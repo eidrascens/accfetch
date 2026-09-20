@@ -43,6 +43,47 @@ Usage examples:
         --dry-run
 """
 
+import sys
+import os
+
+# Add the project root directory to the Python path
+# This allows 'import src.utils...' to work
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+import argparse
+import logging
+from rich.logging import RichHandler
+
+# Add ALL of these missing imports - all from utils
+from utils.system_req import check_disk_space
+from utils.housekeeping import check_tool_available, fetch_srr_list
+from utils.state import load_state, save_state
+from utils.commands import (
+    create_manifest_and_script,
+    submit_array_job,
+    process_srr_list,
+    worker_mode   # <-- ADD THIS LINE
+)
+
+# Set up the rich logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True)]
+)
+logger = logging.getLogger("rich")
+
+# Define missing constants
+PARTITION_QOS_MAP = {
+    "batch": "batch",
+    "debug": "debug",
+    "serial": "serial",
+    "gpu": "gpu",
+    "gpu_a100": "gpu_a100"
+}
+DEFAULT_MIN_DISK_GB = 10.0   # default free disk space check threshold
+
 parser = argparse.ArgumentParser(
     description="SRA retrieval and conversion (prefetch + fasterq-dump) for a BioProject/Study."
 )
@@ -149,15 +190,15 @@ if args.temp_dir:
 
 # Disk space check (if not worker, worker will check again)
 if not args.worker:
-    if not check_disk_space(args.output_dir, args.min_disk_space):
+    if not check_disk_space(logger, args.output_dir, args.min_disk_space):
         sys.exit(1)
 
 # Worker mode: process manifest and exit
 if args.worker:
-    if not check_disk_space(args.output_dir, args.min_disk_space):
+    if not check_disk_space(logger, args.output_dir, args.min_disk_space):
         sys.exit(1)
     worker_mode(args)
-    return
+    sys.exit(0) 
 
 # Check tools availability if not dry-run
 if not args.dry_run:
@@ -186,7 +227,7 @@ except RuntimeError as e:
 
 if not srr_list:
     logger.info("No SRRs to process.")
-    return
+    sys.exit(0)   
 
 # If skip_existing and not scheduler, pre-filter
 if args.skip_existing and not args.scheduler:
@@ -206,7 +247,7 @@ if args.skip_existing and not args.scheduler:
         logger.info(f"Skipped {skipped} SRRs with existing FASTQ.")
     if not srr_list:
         logger.info("All SRRs already have FASTQ output. Nothing to do.")
-        return
+        sys.exit(0)
 
 # Decide execution mode
 if args.scheduler:

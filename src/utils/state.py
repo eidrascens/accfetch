@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Self, Any
+from typing import Any, Dict, Optional, List
 from json import dump, load
 from os import replace
 
@@ -8,7 +8,7 @@ from src.utils.log.logger import Logger
 
 class State:
     def __init__(
-            self: Self,
+            self,
             log: Logger,
             state_file: Path,
             state: dict[str, Any]
@@ -17,7 +17,7 @@ class State:
         self.state_file: Path = state_file
         self.state: dict[str, Any] = state
 
-    def load_state(self: Self) -> Dict[str, Any]:
+    def load_state(self) -> Dict[str, Any]:
         """Load state from JSON file."""
 
         try:
@@ -30,7 +30,7 @@ class State:
                 )
             )
 
-    def save_state(self: Self) -> None:
+    def save_state(self) -> None:
         """Save state to JSON file atomically."""
         tmp_file = f"{self.state_file}.tmp"
         with open(tmp_file, "w", encoding="utf-8") as file:
@@ -39,7 +39,7 @@ class State:
 
 
     def update_state(
-            self: Self,
+            self,
             srr: str,
             key: str,
             value: bool = True
@@ -51,10 +51,31 @@ class State:
 
 
     def get_state(
-            self: Self,
+            self,
             srr: str,
             key: str,
             default: bool = False
         ) -> bool:
         """Get state value for SRR and key."""
         return self.state.get(srr, {}).get(key, default)
+
+
+import json
+from pathlib import Path
+from typing import Any, Dict
+
+def load_state(state_file) -> Dict[str, Any]:
+    """Load state from a JSON file."""
+    from pathlib import Path
+    state_file = Path(state_file)  # Ensure it's a Path
+    if not state_file.exists():
+        return {}
+    with open(state_file, 'r') as f:
+        return json.load(f)
+
+def save_state(state_file, state: Dict[str, Any]) -> None:
+    """Save state to a JSON file."""
+    from pathlib import Path
+    state_file = Path(state_file)  # Ensure it's a Path
+    with open(state_file, 'w') as f:
+        json.dump(state, f, indent=2)

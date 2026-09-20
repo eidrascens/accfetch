@@ -2,7 +2,7 @@ import logging
 import random
 from string import ascii_letters, digits
 from pathlib import Path
-from typing import Self, Any
+from typing import Any
 
 from rich.logging import RichHandler
 
@@ -12,7 +12,7 @@ from src.utils.get_dates import cdate, sdate
 class Logger:
     """ Custom logger. """
 
-    def __init__(self: Self, log_filepath: Path, filename: str) -> None:
+    def __init__(self, log_filepath: Path, filename: str) -> None:
         logging.basicConfig(
             format="%(message)s",
             level=logging.INFO,
@@ -52,10 +52,10 @@ class Logger:
             )
         )
 
-    def get_log_file_path(self: Self) -> Path:
+    def get_log_file_path(self) -> Path:
         return self.log_file
 
-    def crit(self: Self, exception_: Any, msg_: str) -> None:
+    def crit(self, exception_: Any, msg_: str) -> None:
         """Critical errors.
 
         Args:
