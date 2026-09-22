@@ -112,18 +112,18 @@ def fetch_srr_list(accession):
         raise RuntimeError from err
 
 
-def check_dir(log_: Logger, path_arr: list[str]) -> list[str]:
+def check_dir(log_: Logger, path_arr: list[Path]) -> list[Path]:
     """_summary_
 
     Args:
-        path_arr (list[str]): String list of DIR to check.
+        path_arr (list[Path]): String list of DIR to check.
         log_ (Logger): Logger() instance.
 
     Returns:
-        list[str] | None: String list of missing dir.
+        list[Path] | None: String list of missing dir.
     """
 
-    missing_path: list[str] = []
+    missing_path: list[Path] = []
     for dir_ in path_arr:
         if isdir(dir_):
             log_.info(
@@ -133,12 +133,12 @@ def check_dir(log_: Logger, path_arr: list[str]) -> list[str]:
         log_.info(
             f"{dir_} is missing, include to the list ..."
         )
-        missing_path.append(dir_)
+        missing_path.append(Path(dir_))
 
     return missing_path
 
 
-def fix_dir(log_: Logger, path_arr: list[str]) -> None:
+def fix_dir(log_: Logger, path_arr: list[Path]) -> None:
     """Create the missing directories returned by check_dir().
 
     Args:
@@ -146,11 +146,11 @@ def fix_dir(log_: Logger, path_arr: list[str]) -> None:
         log_ (Logger): Logger() instance.
     """
 
-    missing_path: list[str] = check_dir(log_, path_arr)
+    missing_path: list[Path] = check_dir(log_, path_arr)
     if not missing_path:
         return None
 
-    created_dir: list[str] = []
+    created_dir: list[Path] = []
     for dir_ in missing_path:
         try:
             log_.info(f"Trying to create dir: {dir_}")
@@ -160,9 +160,9 @@ def fix_dir(log_: Logger, path_arr: list[str]) -> None:
                 f"Cannot create DIR: {dir_}", err_
             )
         else:
-            created_dir.append(dir_)
+            created_dir.append(Path(dir_))
 
-    failed_dir: list[str] = list(
+    failed_dir: list[Path] = list(
             set(missing_path)^set(created_dir)
         )
     if failed_dir:
