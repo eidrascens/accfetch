@@ -55,7 +55,7 @@ class Logger:
     def get_log_file_path(self) -> Path:
         return self.log_file
 
-    def crit(self, msg_: str, exception_: Optional[Any]) -> None:
+    def crit(self, msg_: str, exception_: Optional[Any] = None) -> None:
         """Critical errors.
 
         Args:
@@ -68,7 +68,7 @@ class Logger:
 
         self.log.critical("%s: %s", exception_, msg_)
 
-    def warn(self, msg_: str, exception_: Optional[Any]) -> None:
+    def warn(self, msg_: str, exception_: Optional[Any] = None) -> None:
         """Warnings.
 
         Args:
@@ -82,7 +82,7 @@ class Logger:
         self.log.warning("%s: %s", exception_, msg_)
 
 
-    def err(self, msg_: str, exception_: Optional[Any]) -> None:
+    def err(self, msg_: str, exception_: Optional[Any] = None) -> None:
         """Minor but tolerable errors.
 
         Args:
