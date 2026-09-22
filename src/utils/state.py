@@ -64,15 +64,6 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-def load_state(state_file) -> Dict[str, Any]:
-    """Load state from a JSON file."""
-    from pathlib import Path
-    state_file = Path(state_file)  # Ensure it's a Path
-    if not state_file.exists():
-        return {}
-    with open(state_file, 'r') as f:
-        return json.load(f)
-
 def save_state(state_file, state: Dict[str, Any]) -> None:
     """Save state to a JSON file."""
     from pathlib import Path
