@@ -1,39 +1,3 @@
-"""
-Automate SRA retrieval and conversion (prefetch -> fasterq-dump) for all runs
-under a BioProject or SRA Study accession. Designed for HPC clusters, especially
-the COARE "Saliksik" environment.
-
-Features:
-- Fetches all SRR accessions for a given accession using NCBI E-utilities.
-- Downloads .sra files with `prefetch` (disabled by default; use --prefetch).
-- Converts .sra to FASTQ with `fasterq-dump`.
-- Compression: default is gzip level 6. If --compression-level is not given,
-  gzip is applied on-the-fly during fasterq-dump (level 6). If you specify
-  --compression-level 1-9, the workflow first produces uncompressed FASTQ,
-  then compresses separately with the chosen level.
-- Optional deletion of .sra after successful conversion (--remove-sra).
-- Disk space pre-check with --min-disk-space (GB).
-- Resume support: a state file records progress per SRR.
-- HPC efficiency:
-    * --parallel-jobs controls the number of concurrent SRR conversions (independent of --threads per conversion).
-    * In SLURM array mode, each task uses its own state file to avoid race conditions.
-    * Subprocess output is redirected to per‑SRR log files instead of held in memory.
-    * --dry-run prints intended commands without executing them.
-    * Thread-safe state updates in local parallel mode via threading.Lock.
-- Supports SLURM array jobs (--scheduler slurm --array-size N).
-- Correct QoS/partition mapping for Saliksik.
-
-Recommended usage:
-    - For small sets (< ~20 SRRs), you can run locally with --parallel-jobs > 1.
-      To avoid duplicate work after an interruption, also use --skip-existing.
-    - If you rely heavily on accurate resume and do not want any risk of lost state,
-      set --parallel-jobs 1.
-    - For larger sets, prefer array jobs (--scheduler slurm) where each task uses its
-      own state file, completely eliminating race conditions.
-"""
-
-
-
 def fetch_srr_list(accession: str) -> List[str]:
     """Fetch all SRR run accessions for a given BioProject or SRA Study accession."""
     logger.info(f"Fetching SRR list for accession: {accession}")
@@ -99,9 +63,6 @@ def fetch_srr_list(accession: str) -> List[str]:
 
     logger.info(f"Total SRR runs to process: {len(srr_list)}")
     return srr_list
-
-
-
 
 def run_prefetch(
     srr: str,
@@ -605,17 +566,3 @@ def create_manifest_and_script(args, srr_list, array_size):
     return script_path
 
 
-def submit_array_job(script_path):
-    """Submit the SLURM job."""
-    try:
-        result = subprocess.run(["sbatch", script_path],
-                                capture_output=True, text=True, check=False)
-        if result.returncode == 0:
-            logger.info(f"Array job submitted: {result.stdout.strip()}")
-            return True
-        else:
-            logger.error(f"Submission failed: {result.stderr.strip()}")
-            return False
-    except Exception as e:
-        logger.error(f"Error submitting: {e}")
-        return False
