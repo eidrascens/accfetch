@@ -64,9 +64,3 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-def save_state(state_file, state: Dict[str, Any]) -> None:
-    """Save state to a JSON file."""
-    from pathlib import Path
-    state_file = Path(state_file)  # Ensure it's a Path
-    with open(state_file, 'w') as f:
-        json.dump(state, f, indent=2)
