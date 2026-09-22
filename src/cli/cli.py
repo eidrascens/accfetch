@@ -45,34 +45,22 @@ Usage examples:
 
 import sys
 import os
-
-# Add the project root directory to the Python path
-# This allows 'import src.utils...' to work
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
 import argparse
-import logging
-from rich.logging import RichHandler
+from pathlib import Path
 
 # Add ALL of these missing imports - all from utils
-from utils.system_req import check_disk_space
-from utils.housekeeping import check_tool_available, fetch_srr_list
-from utils.state import load_state, save_state
-from utils.commands import (
+from src.utils.system_req import check_disk_space
+from src.utils.log.logger import Logger
+from src.utils.housekeeping import check_tool_available, fetch_srr_list
+from src.utils.state import load_state, save_state
+from src.utils.commands import (
     create_manifest_and_script,
     submit_array_job,
     process_srr_list,
     worker_mode   # <-- ADD THIS LINE
 )
 
-# Set up the rich logger
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)]
-)
-logger = logging.getLogger("rich")
+log: Logger = Logger(Path().home(), "sra_retrieval.log")
 
 # Define missing constants
 PARTITION_QOS_MAP = {
@@ -144,8 +132,8 @@ args = parser.parse_args()
 # ------------------------------------------------------------------
 if args.sra_toolkit_bin:
     if not os.path.isdir(args.sra_toolkit_bin):
-        logger.error(f"--sra-toolkit-bin directory does not exist: {args.sra_toolkit_bin}")
-        sys.exit(1)
+        log.err(f"--sra-toolkit-bin directory does not exist: {args.sra_toolkit_bin}")
+        raise SystemExit
     if not args.prefetch_path:
         args.prefetch_path = os.path.join(args.sra_toolkit_bin, "prefetch")
     if args.fasterq_dump and not args.fasterq_dump_path:
@@ -155,7 +143,7 @@ if args.fasterq_dump and not args.fasterq_dump_path and args.prefetch_path:
     dir_name = os.path.dirname(args.prefetch_path)
     args.fasterq_dump_path = os.path.join(dir_name, "fasterq-dump")
     if not os.path.exists(args.fasterq_dump_path):
-        logger.warning(f"Inferred fasterq-dump path {args.fasterq_dump_path} does not exist. Please check.")
+        log.warn(f"Inferred fasterq-dump path {args.fasterq_dump_path} does not exist. Please check.")
         args.fasterq_dump_path = None
 
 # Determine gzip flag
@@ -170,17 +158,17 @@ if args.state_file is None:
 
 # Validate
 if args.prefetch_path and args.conda_env:
-    logger.error("Provide either --prefetch-path or --conda-env, not both.")
-    sys.exit(1)
+    log.err("Provide either --prefetch-path or --conda-env, not both.")
+    raise SystemExit
 if args.fasterq_dump and not (args.prefetch_path or args.conda_env or args.fasterq_dump_path):
-    logger.error("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
-    sys.exit(1)
+    log.err("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
+    raise SystemExit
 if args.keep_fastq and args.compression_level is None:
-    logger.error("--keep-fastq requires --compression-level.")
-    sys.exit(1)
+    log.err("--keep-fastq requires --compression-level.")
+    raise SystemExit
 if args.compression_level is not None and not args.fasterq_dump:
-    logger.error("--compression-level requires --fasterq-dump to be enabled.")
-    sys.exit(1)
+    log.err("--compression-level requires --fasterq-dump to be enabled.")
+    raise SystemExit
 
 # Create output directory
 os.makedirs(args.output_dir, exist_ok=True)
@@ -190,15 +178,15 @@ if args.temp_dir:
 
 # Disk space check (if not worker, worker will check again)
 if not args.worker:
-    if not check_disk_space(logger, args.output_dir, args.min_disk_space):
-        sys.exit(1)
+    if not check_disk_space(log, args.output_dir, args.min_disk_space):
+        raise SystemExit
 
 # Worker mode: process manifest and exit
 if args.worker:
-    if not check_disk_space(logger, args.output_dir, args.min_disk_space):
-        sys.exit(1)
+    if not check_disk_space(log, args.output_dir, args.min_disk_space):
+        raise SystemExit
     worker_mode(args)
-    sys.exit(0) 
+    sys.exit(0)
 
 # Check tools availability if not dry-run
 if not args.dry_run:
@@ -207,27 +195,27 @@ if not args.dry_run:
             ["conda", "run", "-n", args.conda_env, "prefetch"] if args.conda_env else ["prefetch"]
         )
         if not check_tool_available(prefetch_cmd):
-            logger.error("prefetch not found. Use --prefetch-path, --sra-toolkit-bin, or --conda-env.")
-            sys.exit(1)
+            log.err("prefetch not found. Use --prefetch-path, --sra-toolkit-bin, or --conda-env.")
+            raise SystemExit
 
     if args.fasterq_dump:
         fq_cmd = [args.fasterq_dump_path] if args.fasterq_dump_path else (
             ["conda", "run", "-n", args.conda_env, "fasterq-dump"] if args.conda_env else ["fasterq-dump"]
         )
         if not check_tool_available(fq_cmd):
-            logger.error("fasterq-dump not found. Use --fasterq-dump-path, --sra-toolkit-bin, or --conda-env.")
-            sys.exit(1)
+            log.err("fasterq-dump not found. Use --fasterq-dump-path, --sra-toolkit-bin, or --conda-env.")
+            raise SystemExit
 
 # Fetch SRR list
 try:
     srr_list = fetch_srr_list(args.accession)
-except RuntimeError as e:
-    logger.error(str(e))
-    sys.exit(1)
+except RuntimeError as err:
+    log.err(err)
+    raise SystemExit from err
 
 if not srr_list:
-    logger.info("No SRRs to process.")
-    sys.exit(0)   
+    log.info("No SRRs to process.")
+    sys.exit(0)
 
 # If skip_existing and not scheduler, pre-filter
 if args.skip_existing and not args.scheduler:
@@ -244,29 +232,30 @@ if args.skip_existing and not args.scheduler:
     srr_list = filtered
     skipped = original_count - len(srr_list)
     if skipped:
-        logger.info(f"Skipped {skipped} SRRs with existing FASTQ.")
+        log.info(f"Skipped {skipped} SRRs with existing FASTQ.")
     if not srr_list:
-        logger.info("All SRRs already have FASTQ output. Nothing to do.")
+        log.info("All SRRs already have FASTQ output. Nothing to do.")
         sys.exit(0)
 
 # Decide execution mode
 if args.scheduler:
     if args.scheduler != "slurm":
-        logger.error("Only SLURM scheduler is currently supported for array job submission.")
-        sys.exit(1)
+        log.err("Only SLURM scheduler is currently supported for array job submission.")
+        raise SystemExit
     if args.array_size < 1:
-        logger.error("--array-size must be >= 1.")
-        sys.exit(1)
+        log.err("--array-size must be >= 1.")
+        raise SystemExit
     script_path = create_manifest_and_script(args, srr_list, args.array_size)
     submit_array_job(script_path)
 else:
     state = load_state(args.state_file)
     try:
         success, fail = process_srr_list(srr_list, args, state, args.state_file)
-        logger.info(f"Finished processing. Success={success}, Failed={fail}")
+        log.info(f"Finished processing. Success={success}, Failed={fail}")
         if fail > 0:
-            sys.exit(1)
+            raise SystemExit
     except KeyboardInterrupt:
-        logger.warning("Interrupted by user. State saved for resume.")
+        log.warn("Interrupted by user. State saved for resume.")
         save_state(args.state_file, state)
-        sys.exit(1)
+        raise SystemExit
+    
