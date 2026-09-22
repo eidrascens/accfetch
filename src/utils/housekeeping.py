@@ -1,6 +1,6 @@
 from pathlib import Path
 from os.path import exists, isdir
-from os import remove
+from os import remove, mkdir
 from shutil import which
 from subprocess import run
 
@@ -110,3 +110,62 @@ def fetch_srr_list(accession):
 
     except Exception as err:
         raise RuntimeError from err
+
+
+def check_dir(log_: Logger, path_arr: list[str]) -> list[str]:
+    """_summary_
+
+    Args:
+        path_arr (list[str]): String list of DIR to check.
+        log_ (Logger): Logger() instance.
+
+    Returns:
+        list[str] | None: String list of missing dir.
+    """
+
+    missing_path: list[str] = []
+    for dir_ in path_arr:
+        if isdir(dir_):
+            log_.info(
+                f"Skipping: {dir_}, path exists ..."
+            )
+            continue
+        log_.info(
+            f"{dir_} is missing, include to the list ..."
+        )
+        missing_path.append(dir_)
+
+    return missing_path
+
+
+def fix_dir(log_: Logger, path_arr: list[str]) -> None:
+    """Create the missing directories returned by check_dir().
+
+    Args:
+        path_arr (list[str]): String list of DIR to create.
+        log_ (Logger): Logger() instance.
+    """
+
+    missing_path: list[str] = check_dir(log_, path_arr)
+    if not missing_path:
+        return None
+
+    created_dir: list[str] = []
+    for dir_ in missing_path:
+        try:
+            log_.info(f"Trying to create dir: {dir_}")
+            mkdir(dir_)
+        except OSError as err_:
+            log_.crit(
+                f"Cannot create DIR: {dir_}", err_
+            )
+        else:
+            created_dir.append(dir_)
+
+    failed_dir: list[str] = list(
+            set(missing_path)^set(created_dir)
+        )
+    if failed_dir:
+        log_.info(
+            f"Unable to create the ff. DIR: {failed_dir}."
+        )
