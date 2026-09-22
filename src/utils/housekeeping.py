@@ -7,21 +7,18 @@ from src.utils.log.logger import Logger
 
 
 def is_downloaded(srr: str, output_dir: Path) -> bool:
-    """Check if SRR is already processed (sra, subdir, or compressed FASTQ)."""
-    # Existing .sra file
-    if exists(output_dir / f"{srr}.sra"):
-        return True
-    # Subdirectory (prefetch cache — may contain refs)
-    if isdir(output_dir / srr):
-        return True
-    # Paired-end compressed FASTQ
-    if exists(output_dir / f"{srr}_1.fastq.gz") and exists(output_dir / f"{srr}_2.fastq.gz"):
-        return True
-    # Single-end compressed FASTQ
-    if exists(output_dir / f"{srr}.fastq.gz"):
-        return True
-    return False
-
+    """Check if a .sra file or directory for the given SRR exists."""
+    return exists(
+            output_dir / f"{srr}.sra"
+        ) or isdir(
+            output_dir / srr
+        ) or (
+            exists(
+                output_dir / f"{srr}_1.fastq.gz"
+            ) and exists(
+                output_dir / f"{srr}_2.fastq.gz"
+            )
+        ) or exists(output_dir / f"{srr}.fastq.gz")
 
 def remove_file(log: Logger, file_path: Path) -> None:
     if not exists(file_path):
