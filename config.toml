@@ -7,4 +7,15 @@ PARTITION_QOS_MAP = {
     gpu = "gpu-p40_default",
     gpu_a100 = "gpu-a100_default",
 }
+
+[system]
 DEFAULT_MIN_DISK_GB = 20.0
+
+
+[program]
+OUT_DIR = ""
+COMP_LVL =
+ST_FILE =
+
+[commands]
+SRA_TOOLKIT = ""
