@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # ---------- ENVIRONMENT ----------
-source /home/gerryjr.ramos/miniforge3/etc/profile.d/conda.sh
+source /home/$USER/miniforge3/etc/profile.d/conda.sh
 conda activate sra_tools
 
 echo "Python:       $(which python)"
@@ -18,10 +18,10 @@ echo "prefetch:     $(which prefetch)"
 echo "fasterq-dump: $(which fasterq-dump)"
 echo "pigz:         $(which pigz)"
 
-cd /scratch1/gerryjr.ramos/rice_rnaSeq_meta_analysis
+cd /scratch1/$USER/rice_rnaSeq_meta_analysis
 
-export PYTHONPATH="/scratch1/gerryjr.ramos/rice_rnaSeq_meta_analysis/src${PYTHONPATH:+:$PYTHONPATH}"
-export TMPDIR="${SLURM_TMPDIR:-/scratch1/gerryjr.ramos/sra_temp_cache}"
+export PYTHONPATH="/scratch1/$USER/rice_rnaSeq_meta_analysis/src${PYTHONPATH:+:$PYTHONPATH}"
+export TMPDIR="$(SLURM_TMPDIR:-/scratch1/"$USER"/sra_temp_cache)"
 mkdir -p "$TMPDIR"
 echo "TMPDIR: $TMPDIR"
 
@@ -56,7 +56,7 @@ if [[ ${#STUDIES[@]} -eq 0 ]]; then
 fi
 
 # ---------- OUTPUT LAYOUT ----------
-BASE_OUT=/scratch1/gerryjr.ramos/sra_by_project
+BASE_OUT=/scratch1/$USER/sra_by_project
 mkdir -p "$BASE_OUT"
 
 # ---------- MAIN LOOP ----------
@@ -77,7 +77,7 @@ for ENTRY in "${STUDIES[@]}"; do
     if python src/cli/cli.py "$STUDY" \
         --prefetch \
         --fasterq-dump \
-        --sra-toolkit-bin /home/gerryjr.ramos/miniforge3/envs/sra_tools/bin \
+        --sra-toolkit-bin /home/$USER/miniforge3/envs/sra_tools/bin \
         --output-dir "$OUTDIR" \
         --temp-dir "$TMPDIR" \
         --threads 8 \
@@ -93,8 +93,7 @@ for ENTRY in "${STUDIES[@]}"; do
 done
 
 # ---------- SUMMARY ----------
-echo ""
-echo "=================================================================="
+echo -e "\n=================================================================="
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Batch complete."
 TOTAL=${#STUDIES[@]}
 FAILED=${#FAILED_STUDIES[@]}
