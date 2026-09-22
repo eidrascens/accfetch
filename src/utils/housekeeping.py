@@ -1,7 +1,8 @@
 from pathlib import Path
 from os.path import exists, isdir
-
 from os import remove
+from shutil import which
+from subprocess import run
 
 from src.utils.log.logger import Logger
 
@@ -20,10 +21,11 @@ def is_downloaded(srr: str, output_dir: Path) -> bool:
             )
         ) or exists(output_dir / f"{srr}.fastq.gz")
 
+
 def remove_file(log: Logger, file_path: Path) -> None:
     if not exists(file_path):
         log.info(
-            "%s does not exist." % ( file_path )
+            f"{file_path} does not exist."
         )
         return
 
@@ -36,19 +38,18 @@ def remove_file(log: Logger, file_path: Path) -> None:
         SystemError
     ) as err:
         log.err(
-            err, "Cannot remove %s" % ( file_path )
+            f"Cannot remove {file_path}", err
         )
 
 
 def check_tool_available(cmd):
-    """
-    Check if a command is available in the system.
+    """Check if a command is available in the system.
+
     Returns True if the command exists, False otherwise.
     """
-    import shutil
     if isinstance(cmd, list):
         cmd = cmd[0]
-    return shutil.which(cmd) is not None
+    return which(cmd) is not None
 
 
 def fetch_srr_list(accession):
@@ -57,7 +58,6 @@ def fetch_srr_list(accession):
     Supports NCBI SRA (PRJNA/SRP/SRR), DDBJ (PRJDB/DRP/DRR),
     and ENA (PRJEB/ERP/ERR) accessions.
     """
-    import subprocess
 
     if accession.startswith("PRJ"):
         # Covers PRJNA (NCBI), PRJDB (DDBJ), PRJEB (ENA)
@@ -72,19 +72,41 @@ def fetch_srr_list(accession):
         query = accession
 
     try:
-        cmd = f"esearch -db sra -query '{query}' | efetch -format runinfo | cut -d',' -f1 | tail -n +2"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        cmd: list[str] = [
+                "esearch",
+                "-db sra",
+                f"-query '{query}'",
+                "|",
+                "efetch",
+                "-format runinfo",
+                "|",
+                "cut",
+                "-d ','",
+                "-f1",
+                "|",
+                "tail",
+                "-n",
+                "+2"
+            ]
+        result = run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True
+            )
 
         if result.returncode != 0:
             raise RuntimeError(f"Failed to fetch SRR list for {accession}")
 
         # Accept NCBI (SRR), DDBJ (DRR), and ENA (ERR) run prefixes
         srr_list = [
-            line.strip()
-            for line in result.stdout.splitlines()
-            if line.strip() and line.strip().startswith(("SRR", "DRR", "ERR"))
-        ]
+                line.strip()
+                for line in result.stdout.splitlines()
+                if line.strip().startswith(
+                    ("SRR", "DRR", "ERR")
+                )
+            ]
         return srr_list
 
-    except Exception as e:
-        raise RuntimeError(f"Error fetching SRR list for {accession}: {e}")
+    except Exception as err:
+        raise RuntimeError from err
