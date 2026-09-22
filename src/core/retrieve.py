@@ -1,0 +1,155 @@
+from os.path import isdir, join, exists
+from tomllib import load
+
+from pathlib import Path
+
+from src.utils.log.logger import Logger
+from src.utils.housekeeping import fix_dir
+from src.utils.system_req import check_disk_space
+
+
+class Retrieve:
+    def __init__(self, log_: Logger, toml_conf: Path) -> None:
+        self.log_: Logger = log_
+
+        with open(toml_conf, "rb", encoding="utf-8") as conf:
+            conf = load(conf)
+
+        self.prog = conf["program"]
+        self.cmd = conf["commands"]
+
+        self.sra_toolkit: Path = Path(self.cmd["SRA_TOOLKIT"])
+        self.fasterq_dump: Path = self.sra_toolkit / "prefetch"
+        self.prefetch_path: Path = self.sra_toolkit / "fasterq-dump"
+
+    def retrieve(self) -> None:
+
+
+        try:
+            for cmd_path in [
+                    self.fasterq_dump,
+                    self.prefetch_path,
+                    self.sra_toolkit
+                ]:
+                if not isdir(cmd_path) or not exists(cmd_path):
+                    self.log_.err(f"{cmd_path} not found!")
+                    raise FileNotFoundError
+        except FileNotFoundError as err:
+            raise SystemExit from err
+
+        # Determine gzip flag
+        if self.prog["COMP_LVL"] is not None:
+            gzip = False
+        else:
+            gzip = fasterq_dump and not no_gzip
+
+        # Set state file path if not provided
+        if self.prog["ST_FILE"] is None:
+            state_file: Path = self.prog["OUT_DIR"] / ".sra_state.json"
+
+        # Validate
+        if prefetch_path and conda_env:
+            log_.err("Provide either --prefetch-path or --conda-env, not both.")
+            raise SystemExit
+        if fasterq_dump and not (prefetch_path or conda_env or fasterq_dump_path):
+            log_.err("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
+            raise SystemExit
+        if keep_fastq and compression_level is None:
+            log_.err("--keep-fastq requires --compression-level.")
+            raise SystemExit
+        if compression_level is not None and not fasterq_dump:
+            log_.err("--compression-level requires --fasterq-dump to be enabled.")
+            raise SystemExit
+
+        # Create output directory
+        DIR: list[Path] = [
+                self.prog["OUT_DIR"],
+                self.prog["OUT_DIR"] / "logs"
+            ]
+        fix_dir(log_, DIR)
+        
+        if temp_dir:
+            os.makedirs(temp_dir, exist_ok=True)
+
+        # Disk space check (if not worker, worker will check again)
+        if not worker:
+            if not check_disk_space(output_dir, min_disk_space):
+                raise SystemExit
+
+        # Worker mode: process manifest and exit
+        if worker:
+            if not check_disk_space(log_, output_dir, min_disk_space):
+                raise SystemExit
+            worker_mode(args)
+            return
+
+        # Check tools availability if not dry-run
+        if not dry_run:
+            if prefetch:
+                prefetch_cmd = [prefetch_path] if prefetch_path else (
+                    ["conda", "run", "-n", conda_env, "prefetch"] if conda_env else ["prefetch"]
+                )
+                if not check_tool_available(prefetch_cmd):
+                    log_.err("prefetch not found. Use --prefetch-path, --sra-toolkit-bin, or --conda-env.")
+                    raise SystemExit
+
+            if fasterq_dump:
+                fq_cmd = [fasterq_dump_path] if fasterq_dump_path else (
+                    ["conda", "run", "-n", conda_env, "fasterq-dump"] if conda_env else ["fasterq-dump"]
+                )
+                if not check_tool_available(fq_cmd):
+                    log_.err("fasterq-dump not found. Use --fasterq-dump-path, --sra-toolkit-bin, or --conda-env.")
+                    raise SystemExit
+
+        # Fetch SRR list
+        try:
+            srr_list = fetch_srr_list(accession)
+        except RuntimeError as e:
+            log_.err(str(e))
+            raise SystemExit
+
+        if not srr_list:
+            log_.info("No SRRs to process.")
+            return
+
+        # If skip_existing and not scheduler, pre-filter
+        if skip_existing and not scheduler:
+            original_count = len(srr_list)
+            filtered = []
+            for srr in srr_list:
+                fastq_base = join(output_dir, srr)
+                if exists(f"{fastq_base}.fastq") or \
+                exists(f"{fastq_base}_1.fastq") or \
+                exists(f"{fastq_base}.fastq.gz") or \
+                exists(f"{fastq_base}_1.fastq.gz"):
+                    continue
+                filtered.append(srr)
+            srr_list = filtered
+            skipped = original_count - len(srr_list)
+            if skipped:
+                log_.info(f"Skipped {skipped} SRRs with existing FASTQ.")
+            if not srr_list:
+                log_.info("All SRRs already have FASTQ output. Nothing to do.")
+                return
+
+        # Decide execution mode
+        if scheduler:
+            if scheduler != "slurm":
+                log_.err("Only SLURM scheduler is currently supported for array job submission.")
+                raise SystemExit
+            if array_size < 1:
+                log_.err("--array-size must be >= 1.")
+                raise SystemExit
+            script_path = create_manifest_and_script(args, srr_list, array_size)
+            submit_array_job(script_path)
+        else:
+            state = load_state(state_file)
+            try:
+                success, fail = process_srr_list(srr_list, args, state, state_file)
+                log_.info(f"Finished processing. Success={success}, Failed={fail}")
+                if fail > 0:
+                    raise SystemExit
+            except KeyboardInterrupt:
+                log_.warn("Interrupted by user. State saved for resume.")
+                save_state(state_file, state)
+                raise SystemExit
