@@ -2,7 +2,7 @@ import logging
 import random
 from string import ascii_letters, digits
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from rich.logging import RichHandler
 
@@ -55,7 +55,7 @@ class Logger:
     def get_log_file_path(self) -> Path:
         return self.log_file
 
-    def crit(self, exception_: Any, msg_: str) -> None:
+    def crit(self, msg_: str, exception_: Optional[Any]) -> None:
         """Critical errors.
 
         Args:
@@ -63,15 +63,35 @@ class Logger:
             msg_ -- message to be logged.
         """
 
+        if not exception_:
+            self.log.critical("%s", msg_)
+
         self.log.critical("%s: %s", exception_, msg_)
 
-    def err(self, exception_: Any, msg_: str) -> None:
+    def warn(self, msg_: str, exception_: Optional[Any]) -> None:
+        """Warnings.
+
+        Args:
+            exception_ -- stderr from raised exception.
+            msg_ -- message to be logged.
+        """
+
+        if not exception_:
+            self.log.warning("%s", msg_)
+
+        self.log.warning("%s: %s", exception_, msg_)
+
+
+    def err(self, msg_: str, exception_: Optional[Any]) -> None:
         """Minor but tolerable errors.
 
         Args:
             exception_ -- stderr from raised exception.
             msg_ -- message to be logged.
         """
+
+        if not exception_:
+            self.log.error("%s", msg_)
 
         self.log.error("%s: %s", exception_, msg_)
 
