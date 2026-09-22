@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict
 from json import dump, load
 from os import replace
 
@@ -58,9 +58,3 @@ class State:
         ) -> bool:
         """Get state value for SRR and key."""
         return self.state.get(srr, {}).get(key, default)
-
-
-import json
-from pathlib import Path
-from typing import Any, Dict
-
