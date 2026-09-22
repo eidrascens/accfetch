@@ -9,25 +9,23 @@ from src.utils.log.logger import Logger
 class State:
     def __init__(
             self,
-            log: Logger,
+            log_: Logger,
             state_file: Path,
             state: dict[str, Any]
         ) -> None:
-        self.log: Logger = log
+        self.log_: Logger = log_
         self.state_file: Path = state_file
         self.state: dict[str, Any] = state
 
-    def load_state(self) -> Dict[str, Any]:
+    def load_state(self) -> Dict[str, Any] | None:
         """Load state from JSON file."""
 
         try:
             with open(self.state_file, "r", encoding="utf-8") as file:
                 return load(file)
         except (FileNotFoundError) as _:
-            self.log.warn(
-                "Error reading %s, starting fresh." % (
-                    self.state_file
-                )
+            self.log_.warn(
+                "Error reading %s, starting fresh." % ( self.state_file )
             )
 
     def save_state(self) -> None:

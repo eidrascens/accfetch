@@ -25,7 +25,7 @@ def is_downloaded(srr: str, output_dir: Path) -> bool:
 def remove_file(log: Logger, file_path: Path) -> None:
     if not exists(file_path):
         log.info(
-            f"{file_path} does not exist."
+            "%s does not exist." % ( file_path )
         )
         return
 
@@ -38,7 +38,7 @@ def remove_file(log: Logger, file_path: Path) -> None:
         SystemError
     ) as err:
         log.err(
-            f"Cannot remove {file_path}", err
+            "Cannot remove %s" % ( file_path ), err
         )
 
 
@@ -127,11 +127,11 @@ def check_dir(log_: Logger, path_arr: list[Path]) -> list[Path]:
     for dir_ in path_arr:
         if isdir(dir_):
             log_.info(
-                f"Skipping: {dir_}, path exists ..."
+                "Skipping: %s, path exists ..." % ( dir_ )
             )
             continue
         log_.info(
-            f"{dir_} is missing, include to the list ..."
+            "%s is missing, include to the list ..." % ( dir_ )
         )
         missing_path.append(Path(dir_))
 
@@ -153,19 +153,23 @@ def fix_dir(log_: Logger, path_arr: list[Path]) -> None:
     created_dir: list[Path] = []
     for dir_ in missing_path:
         try:
-            log_.info(f"Trying to create dir: {dir_}")
+            log_.info(
+                "Trying to create dir: %s" % ( dir_ )
+            )
             mkdir(dir_)
         except OSError as err_:
             log_.crit(
-                f"Cannot create DIR: {dir_}", err_
+                "Cannot create DIR: %s" % ( dir_ ), err_
             )
         else:
             created_dir.append(Path(dir_))
 
     failed_dir: list[Path] = list(
-            set(missing_path)^set(created_dir)
+            set(missing_path) ^ set(created_dir)
         )
     if failed_dir:
         log_.info(
-            f"Unable to create the ff. DIR: {failed_dir}."
+            "Unable to create the ff. DIR: %s." % (
+                failed_dir
+            )
         )

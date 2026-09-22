@@ -39,9 +39,9 @@ def compress_fastq_file(
             ) as gz_out:
                 copyfileobj(f_in, gz_out)
         remove_file(log, fastq_path)
-    except Exception as err:
+    except Exception as err_:
         log.err(
-            err, "Compression failed for %s" % (fastq_path)
+            "Compression failed for %s" % (fastq_path), err_
         )
     else:
         return True

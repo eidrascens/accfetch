@@ -4,7 +4,7 @@ from pathlib import Path
 from src.utils.log.logger import Logger
 
 
-def submit_array_job(log: Logger, script_path: Path):
+def submit_array_job(log_: Logger, script_path: Path):
     """Submit the SLURM job."""
     try:
         result = run(
@@ -14,10 +14,12 @@ def submit_array_job(log: Logger, script_path: Path):
                 check=False
             )
         if result.returncode == 0:
-            log.info(f"Array job submitted: {result.stdout.strip()}")
-        log.err(f"Submission failed: {result.stderr.strip()}")
+            log_.info(
+                "Array job submitted: %s" % ( result.stdout.strip() )
+            )
+        log_.err("Submission failed: %s" % ( result.stderr.strip() ))
     except Exception as err:
-        log.err(f"Error submitting: {err}")
+        log_.err("Error submitting: %s" % err, err)
     else:
         return True
 

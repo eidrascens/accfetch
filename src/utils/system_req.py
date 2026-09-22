@@ -4,7 +4,7 @@ from src.utils.log.logger import Logger
 
 
 def check_disk_space(
-        log: Logger, output_dir: str, min_gb: float
+        log_: Logger, output_dir: str, min_gb: float
     ) -> bool:
     """Check available disk space in output_dir."""
     if min_gb <= 0:
@@ -16,17 +16,17 @@ def check_disk_space(
         if free_gb < min_gb:
             raise OSError
     except OSError as _:
-        log.err(
-            "Insufficient disk space in %s: "
-            "available %0.2f GB, required %0.2f GB"
+        log_.err(
+            "Insufficient disk space in %s.\n"
+            "Available %0.2f GB, required %0.2f GB"
             % ( output_dir, free_gb, min_gb )
         )
     except Exception as err:
-        log.warn(
+        log_.warn(
             "Could not check disk space: %s" % ( err )
         )
     else:
-        log.info("%0.2f GB available" % ( free_gb ))
+        log_.info("%0.2f GB available" % ( free_gb ))
         return True
 
     return False
