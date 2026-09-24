@@ -1,5 +1,10 @@
+import subprocess
+import shutil
+import gzip
 from pathlib import Path
 from typing import Optional
+
+from src.utils.housekeeping import remove_file, is_downloaded
 
 
 def build_prefetch_cmd(
@@ -80,9 +85,6 @@ def process_srr_list(srr_list, args, state, state_file):
     Process a list of SRRs: download, convert, clean up.
     Returns (success_count, fail_count).
     """
-    import subprocess
-    from pathlib import Path
-    from src.utils.housekeeping import remove_file, is_downloaded
 
     success = 0
     fail = 0
@@ -213,9 +215,8 @@ def _compress_fastq(fastq_path, level=6, keep_original=False, threads=4):
     Compress a single FASTQ file.
     Prefers `pigz` (parallel) if available; falls back to Python's gzip.
     """
-    import shutil
-    import subprocess
-    from pathlib import Path
+
+
 
     fastq_path = Path(fastq_path)
     gz_path = fastq_path.with_suffix(fastq_path.suffix + ".gz")
@@ -229,7 +230,6 @@ def _compress_fastq(fastq_path, level=6, keep_original=False, threads=4):
         subprocess.run(cmd, check=True)
     else:
         # Fallback: pure-Python gzip (slower, single-threaded)
-        import gzip
         with open(fastq_path, "rb") as f_in, \
              gzip.open(gz_path, "wb", compresslevel=level) as f_out:
             shutil.copyfileobj(f_in, f_out)
