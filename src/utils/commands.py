@@ -1,10 +1,12 @@
 import subprocess
 import shutil
 import gzip
+from subprocess import run
 from pathlib import Path
 from typing import Optional
 
 from src.utils.housekeeping import remove_file, is_downloaded
+from src.utils.log.logger import Logger
 
 
 def build_prefetch_cmd(
@@ -210,29 +212,44 @@ def process_srr_list(srr_list, args, state, state_file):
     return success, fail
 
 
-def _compress_fastq(fastq_path, level=6, keep_original=False, threads=4):
+def _compress_fastq(
+        log_: Logger,
+        fastq_path: Path,
+        piz_path: Path,
+        level: int = 6,
+        keep_original: bool =False,
+        threads: int = 4
+    ):
     """
     Compress a single FASTQ file.
     Prefers `pigz` (parallel) if available; falls back to Python's gzip.
     """
 
-
-
-    fastq_path = Path(fastq_path)
     gz_path = fastq_path.with_suffix(fastq_path.suffix + ".gz")
 
-    pigz = shutil.which("pigz")
-    if pigz:
+    try:
         # pigz: -N = level, -p = threads, -k = keep original, -f = force overwrite
-        cmd = [pigz, f"-{level}", "-p", str(threads)]
-        cmd.append("-k" if keep_original else "-f")
-        cmd.append(str(fastq_path))
-        subprocess.run(cmd, check=True)
-    else:
-        # Fallback: pure-Python gzip (slower, single-threaded)
-        with open(fastq_path, "rb") as f_in, \
-             gzip.open(gz_path, "wb", compresslevel=level) as f_out:
+        cmd = [
+                piz_path,
+                f"-{level}",
+                "-p",
+                f"{threads}",
+                "-k" if keep_original else "-f",
+                f"{fastq_path}"
+            ]
+        run(cmd, check=True)
+    except RuntimeError as err_:
+        log_.warn(
+            "Runtime error: falling back to Python Gzip", err_
+        )
+
+        with open(
+                fastq_path, "rb"
+            ) as f_in, gzip.open(
+                gz_path, "wb", compresslevel=level
+            ) as f_out:
             shutil.copyfileobj(f_in, f_out)
+            
         if not keep_original:
             fastq_path.unlink()
 
