@@ -30,10 +30,6 @@ A few deliberate choices shape how this pipeline behaves:
   studies separated, which is helpful when assembling a
   multi-project meta-analysis.
 
-- **Batch-driven configuration.** A single `studies.txt` file lists
-  the studies to process. Adding or removing a study requires no code
-  changes.
-
 - **Resume-safe.** Interrupted jobs can be resubmitted safely.
   Completed runs are detected and skipped, so no work is repeated.
 
@@ -41,17 +37,9 @@ A few deliberate choices shape how this pipeline behaves:
   FASTQ conversion are directed to a scratch directory rather than
   the project folder or `$HOME`, keeping quota usage low.
 
-- **Lightweight dependencies.** The pipeline relies only on standard
-  Python, SRA Toolkit, `pigz`, and `entrez-direct`. There is no
-  workflow engine or container runtime to install or maintain.
-
 - **External compression.** Compression is performed as a separate
   post-conversion step, which also allows alternative compressors
   to be swapped in if needed.
-
-- **Graceful failure.** If one study fails during a batch, the loop
-  logs the failure and continues to the next study, so a single
-  problematic accession does not halt the whole run.
 
 ---
 
