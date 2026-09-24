@@ -1,3 +1,184 @@
+#!/usr/bin/env python3
+"""
+Automate SRA retrieval and conversion (prefetch -> fasterq-dump) for all runs
+under a BioProject or SRA Study accession. Designed for HPC clusters, especially
+the COARE "Saliksik" environment.
+
+Features:
+- Fetches all SRR accessions for a given accession using NCBI E-utilities.
+- Downloads .sra files with `prefetch` (disabled by default; use --prefetch).
+- Converts .sra to FASTQ with `fasterq-dump`.
+- Compression: default is gzip level 6. If --compression-level is not given,
+  gzip is applied on-the-fly during fasterq-dump (level 6). If you specify
+  --compression-level 1-9, the workflow first produces uncompressed FASTQ,
+  then compresses separately with the chosen level.
+- Optional deletion of .sra after successful conversion (--remove-sra).
+- Disk space pre-check with --min-disk-space (GB).
+- Resume support: a state file records progress per SRR.
+- HPC efficiency:
+    * --parallel-jobs controls the number of concurrent SRR conversions (independent of --threads per conversion).
+    * In SLURM array mode, each task uses its own state file to avoid race conditions.
+    * Subprocess output is redirected to per‑SRR log files instead of held in memory.
+    * --dry-run prints intended commands without executing them.
+    * Thread-safe state updates in local parallel mode via threading.Lock.
+- Supports SLURM array jobs (--scheduler slurm --array-size N).
+- Correct QoS/partition mapping for Saliksik.
+
+Recommended usage:
+    - For small sets (< ~20 SRRs), you can run locally with --parallel-jobs > 1.
+      To avoid duplicate work after an interruption, also use --skip-existing.
+    - If you rely heavily on accurate resume and do not want any risk of lost state,
+      set --parallel-jobs 1.
+    - For larger sets, prefer array jobs (--scheduler slurm) where each task uses its
+      own state file, completely eliminating race conditions.
+
+Requirements:
+- Python 3.6+
+- SRA Toolkit installed (provide --prefetch-path, --sra-toolkit-bin, or --conda-env)
+- 'requests' library (pip install requests)
+
+Usage examples:
+    # Only convert existing .sra files
+    python sra_retrieval.py SRPXXXXXX \
+        --sra-toolkit-bin /path/to/bin \
+        --fasterq-dump \
+        --compression-level 6 \
+        --remove-sra \
+        --output-dir /scratch1/user/fastq \
+        --parallel-jobs 4 --threads 8
+
+    # Enable download before conversion
+    python sra_retrieval.py SRPXXXXXX \
+        --sra-toolkit-bin /path/to/bin \
+        --prefetch \
+        --fasterq-dump \
+        --compression-level 6 \
+        --remove-sra \
+        --output-dir /scratch1/user/fastq \
+        --parallel-jobs 4 --threads 8
+
+    # Submit as a SLURM array job
+    python sra_retrieval.py SRPXXXXXX \
+    --sra-toolkit-bin /path/to/bin \
+    --prefetch \
+    --fasterq-dump \
+    --compression-level 6 \
+    --remove-sra \
+    --output-dir /scratch1/user/fastq \
+    --scheduler slurm \
+    --array-size 20 \
+    --partition batch \
+    --mem 16G \
+    --time 24:00:00 \
+    --parallel-jobs 2 \
+    --threads 4
+
+    # Dry run to see commands
+    python sra_retrieval.py SRPXXXXXX \
+        --sra-toolkit-bin /path/to/bin \
+        --prefetch \
+        --fasterq-dump \
+        --dry-run
+"""
+
+import argparse
+import concurrent.futures
+import json
+import logging
+import os
+import shutil
+import subprocess
+import sys
+import time
+import threading
+from typing import List, Optional, Dict, Any
+
+import requests
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+# NCBI E-utilities
+ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+
+# QoS mapping for Saliksik partitions
+PARTITION_QOS_MAP = {
+    "debug": "debug_default",
+    "batch": "batch_default",
+    "serial": "serial_default",
+    "gpu": "gpu-p40_default",
+    "gpu_a100": "gpu-a100_default",
+}
+
+# Default minimum disk space in GB
+DEFAULT_MIN_DISK_GB = 20.0
+
+
+# ----------------------------------------------------------------------
+# Utility functions
+# ----------------------------------------------------------------------
+def build_prefetch_cmd(
+    srr: str,
+    output_dir: str,
+    max_size: Optional[str],
+    extra_args: Optional[List[str]],
+    prefetch_path: Optional[str],
+    conda_env: Optional[str],
+) -> List[str]:
+    """Build the command list for running prefetch."""
+    if prefetch_path:
+        cmd = [prefetch_path, srr, "-O", output_dir]
+    elif conda_env:
+        cmd = ["conda", "run", "-n", conda_env, "prefetch", srr, "-O", output_dir]
+    else:
+        cmd = ["prefetch", srr, "-O", output_dir]
+
+    if max_size:
+        cmd.extend(["--max-size", max_size])
+    if extra_args:
+        cmd.extend(extra_args)
+    return cmd
+
+
+def build_fasterq_dump_cmd(
+    sra_file: str,
+    output_dir: str,
+    threads: int,
+    fasterq_dump_path: Optional[str],
+    conda_env: Optional[str],
+    gzip: bool,
+    extra_args: Optional[List[str]],
+) -> List[str]:
+    """Build the command for fasterq-dump."""
+    if fasterq_dump_path:
+        cmd = [fasterq_dump_path, sra_file, "-O", output_dir, "--threads", str(threads)]
+    elif conda_env:
+        cmd = ["conda", "run", "-n", conda_env, "fasterq-dump", sra_file, "-O", output_dir, "--threads", str(threads)]
+    else:
+        cmd = ["fasterq-dump", sra_file, "-O", output_dir, "--threads", str(threads)]
+
+    if gzip:
+        cmd.append("--gzip")
+    if extra_args:
+        cmd.extend(extra_args)
+    return cmd
+
+
+def check_tool_available(cmd: List[str]) -> bool:
+    """Check if a command exists by running --version."""
+    try:
+        subprocess.run(cmd + ["--version"], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
 def fetch_srr_list(accession: str) -> List[str]:
     """Fetch all SRR run accessions for a given BioProject or SRA Study accession."""
     logger.info(f"Fetching SRR list for accession: {accession}")
@@ -14,8 +195,7 @@ def fetch_srr_list(accession: str) -> List[str]:
         esearch_data = response.json()
         uid_list = esearch_data.get("esearchresult", {}).get("idlist", [])
         if not uid_list:
-            raise RuntimeError(
-                f"No SRA records found for accession: {accession}")
+            raise RuntimeError(f"No SRA records found for accession: {accession}")
         logger.info(f"Found {len(uid_list)} SRA UIDs.")
     except requests.exceptions.RequestException as e:
         raise RuntimeError(f"ESearch request failed: {e}")
@@ -45,8 +225,7 @@ def fetch_srr_list(accession: str) -> List[str]:
             run_col_index = header.index(alt)
             break
     if run_col_index is None:
-        raise RuntimeError(
-            f"Could not find 'Run' column in CSV header: {header}")
+        raise RuntimeError(f"Could not find 'Run' column in CSV header: {header}")
 
     srr_list = []
     for line in lines[1:]:
@@ -64,6 +243,14 @@ def fetch_srr_list(accession: str) -> List[str]:
     logger.info(f"Total SRR runs to process: {len(srr_list)}")
     return srr_list
 
+
+def is_downloaded(srr: str, output_dir: str) -> bool:
+    """Check if a .sra file or directory for the given SRR exists."""
+    sra_file = os.path.join(output_dir, f"{srr}.sra")
+    sra_dir = os.path.join(output_dir, srr)
+    return os.path.exists(sra_file) or os.path.isdir(sra_dir)
+
+
 def run_prefetch(
     srr: str,
     output_dir: str,
@@ -75,8 +262,7 @@ def run_prefetch(
     log_file: str,
 ) -> bool:
     """Run prefetch for one SRR, logging to a file. Returns True on success."""
-    cmd = build_prefetch_cmd(srr, output_dir, max_size,
-                             extra_args, prefetch_path, conda_env)
+    cmd = build_prefetch_cmd(srr, output_dir, max_size, extra_args, prefetch_path, conda_env)
     logger.info(f"Running prefetch: {' '.join(cmd)}")
     env = os.environ.copy()
     if temp_dir:
@@ -115,8 +301,7 @@ def run_fasterq_dump(
     log_file: str,
 ) -> bool:
     """Run fasterq-dump on the .sra file, logging to a file. Returns True on success."""
-    cmd = build_fasterq_dump_cmd(
-        sra_path, output_dir, threads, fasterq_dump_path, conda_env, gzip, extra_args)
+    cmd = build_fasterq_dump_cmd(sra_path, output_dir, threads, fasterq_dump_path, conda_env, gzip, extra_args)
     logger.info(f"Running fasterq-dump: {' '.join(cmd)}")
     try:
         with open(log_file, "a") as log_f:
@@ -136,6 +321,98 @@ def run_fasterq_dump(
     except Exception as e:
         logger.error(f"Exception during fasterq-dump for {srr}: {e}")
         return False
+
+
+def compress_fastq_file(
+    fastq_path: str,
+    compression_level: int,
+    keep_fastq: bool,
+) -> bool:
+    """Compress a single FASTQ file using gzip with specified level."""
+    gz_path = fastq_path + ".gz"
+    logger.info(f"Compressing {fastq_path} -> {gz_path} (level {compression_level})")
+    start = time.time()
+    try:
+        with open(fastq_path, 'rb') as f_in, open(gz_path, 'wb') as f_out:
+            import gzip as gzip_module
+            with gzip_module.GzipFile(filename='', mode='wb', compresslevel=compression_level, fileobj=f_out) as gz_out:
+                shutil.copyfileobj(f_in, gz_out)
+        duration = time.time() - start
+        logger.info(f"Compressed {fastq_path} in {duration:.1f}s")
+        if not keep_fastq:
+            os.remove(fastq_path)
+            logger.info(f"Removed original {fastq_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Compression failed for {fastq_path}: {e}")
+        if os.path.exists(gz_path):
+            try:
+                os.remove(gz_path)
+            except:
+                pass
+        return False
+
+
+# ----------------------------------------------------------------------
+# State file handling
+# ----------------------------------------------------------------------
+def load_state(state_file: str) -> Dict[str, Any]:
+    """Load state from JSON file."""
+    if os.path.exists(state_file):
+        try:
+            with open(state_file, 'r') as f:
+                return json.load(f)
+        except Exception:
+            logger.warning(f"Could not read state file {state_file}, starting fresh.")
+    return {}
+
+
+def save_state(state_file: str, state: Dict[str, Any]) -> None:
+    """Save state to JSON file atomically."""
+    tmp_file = state_file + ".tmp"
+    with open(tmp_file, 'w') as f:
+        json.dump(state, f, indent=2)
+    os.replace(tmp_file, state_file)
+
+
+def update_state(
+    state: Dict[str, Any],
+    srr: str,
+    key: str,
+    value: bool = True,
+) -> None:
+    """Update state for a given SRR."""
+    if srr not in state:
+        state[srr] = {}
+    state[srr][key] = value
+
+
+def get_state(state: Dict[str, Any], srr: str, key: str, default: bool = False) -> bool:
+    """Get state value for SRR and key."""
+    return state.get(srr, {}).get(key, default)
+
+
+# ----------------------------------------------------------------------
+# Disk space check
+# ----------------------------------------------------------------------
+def check_disk_space(output_dir: str, min_gb: float) -> bool:
+    """Check available disk space in output_dir."""
+    if min_gb <= 0:
+        return True
+    try:
+        total, used, free = shutil.disk_usage(output_dir)
+        free_gb = free / (1024 ** 3)
+        if free_gb < min_gb:
+            logger.error(
+                f"Insufficient disk space in {output_dir}: "
+                f"available {free_gb:.1f} GB, required {min_gb:.1f} GB"
+            )
+            return False
+        logger.info(f"Disk space check passed: {free_gb:.1f} GB available")
+        return True
+    except Exception as e:
+        logger.warning(f"Could not check disk space: {e}")
+        return True
 
 
 # ----------------------------------------------------------------------
@@ -178,18 +455,15 @@ def process_single_srr(
     if dry_run:
         logger.info(f"[DRY RUN] Processing {srr}:")
         if do_prefetch:
-            cmd = build_prefetch_cmd(
-                srr, output_dir, max_size, prefetch_extra, prefetch_path, conda_env)
+            cmd = build_prefetch_cmd(srr, output_dir, max_size, prefetch_extra, prefetch_path, conda_env)
             logger.info(f"  prefetch: {' '.join(cmd)}")
         if run_fastq:
             # In dry run we don't know the exact sra path; just print a placeholder
             sra_path = f"{output_dir}/{srr}.sra"
-            cmd = build_fasterq_dump_cmd(
-                sra_path, output_dir, threads, fasterq_dump_path, conda_env, gzip, fasterq_extra)
+            cmd = build_fasterq_dump_cmd(sra_path, output_dir, threads, fasterq_dump_path, conda_env, gzip, fasterq_extra)
             logger.info(f"  fasterq-dump: {' '.join(cmd)}")
             if compression_level is not None:
-                logger.info(
-                    f"  compress FASTQ with level {compression_level} (keep_fastq={keep_fastq})")
+                logger.info(f"  compress FASTQ with level {compression_level} (keep_fastq={keep_fastq})")
             if remove_sra:
                 logger.info(f"  remove .sra after conversion")
         return True
@@ -222,8 +496,7 @@ def process_single_srr(
                 srr, output_dir, max_size, prefetch_extra, prefetch_path, conda_env, temp_dir, log_file
             )
             if not prefetch_ok:
-                logger.error(
-                    f"Prefetch failed for {srr}, skipping conversion.")
+                logger.error(f"Prefetch failed for {srr}, skipping conversion.")
                 return False
             if lock:
                 with lock:
@@ -248,12 +521,10 @@ def process_single_srr(
                     actual_sra_path = os.path.join(root, f)
                     break
         if not actual_sra_path:
-            logger.error(
-                f"Could not find .sra file in directory {sra_dir} for {srr}")
+            logger.error(f"Could not find .sra file in directory {sra_dir} for {srr}")
             return False
     else:
-        logger.error(
-            f"No .sra file or directory found for {srr} in {output_dir}")
+        logger.error(f"No .sra file or directory found for {srr} in {output_dir}")
         return False
 
     # 2. Conversion
@@ -266,8 +537,7 @@ def process_single_srr(
                     fasterq_dump_path, conda_env, gzip, fasterq_extra, log_file
                 )
                 if not conv_ok:
-                    logger.error(
-                        f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                    logger.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                     return False
                 if lock:
                     with lock:
@@ -286,8 +556,7 @@ def process_single_srr(
                     fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
                 )
                 if not conv_ok:
-                    logger.error(
-                        f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                    logger.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                     return False
                 if lock:
                     with lock:
@@ -311,8 +580,7 @@ def process_single_srr(
                             if f.startswith(srr) and f.endswith(".fastq"):
                                 fastq_files.append(os.path.join(output_dir, f))
                     if not fastq_files:
-                        logger.error(
-                            f"No FASTQ files found for compression for {srr}")
+                        logger.error(f"No FASTQ files found for compression for {srr}")
                         return False
 
                     compress_ok = True
@@ -321,8 +589,7 @@ def process_single_srr(
                             compress_ok = False
                             break
                     if not compress_ok:
-                        logger.error(
-                            f"Compression failed for some files of {srr}")
+                        logger.error(f"Compression failed for some files of {srr}")
                         return False
                     if lock:
                         with lock:
@@ -364,8 +631,7 @@ def process_srr_list(
     lock = threading.Lock() if parallel_jobs > 1 else None
 
     if parallel_jobs > 1:
-        logger.info(
-            f"Processing {len(srr_list)} SRRs with {parallel_jobs} parallel jobs.")
+        logger.info(f"Processing {len(srr_list)} SRRs with {parallel_jobs} parallel jobs.")
         with concurrent.futures.ThreadPoolExecutor(max_workers=parallel_jobs) as executor:
             futures = {
                 executor.submit(
@@ -400,8 +666,7 @@ def process_srr_list(
                     success += 1
                 else:
                     fail += 1
-                logger.info(
-                    f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
+                logger.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
     else:
         # sequential mode, no lock needed
         for srr in srr_list:
@@ -431,8 +696,7 @@ def process_srr_list(
                 success += 1
             else:
                 fail += 1
-            logger.info(
-                f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
+            logger.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
 
     return success, fail
 
@@ -449,8 +713,7 @@ def worker_mode(args):
     elif "PBS_ARRAYID" in os.environ:
         task_id = int(os.environ["PBS_ARRAYID"]) - 1
     else:
-        logger.error(
-            "Worker mode requires SLURM_ARRAY_TASK_ID or PBS_ARRAYID environment variable.")
+        logger.error("Worker mode requires SLURM_ARRAY_TASK_ID or PBS_ARRAYID environment variable.")
         sys.exit(1)
 
     logger.info(f"Worker mode: processing task ID {task_id}")
@@ -473,13 +736,11 @@ def worker_mode(args):
         return
 
     # Use per-task state file to avoid cross-task race
-    state_file = args.state_file if args.state_file else os.path.join(
-        args.output_dir, f".state_{task_id}.json")
+    state_file = args.state_file if args.state_file else os.path.join(args.output_dir, f".state_{task_id}.json")
     state = load_state(state_file)
     logger.info(f"Assigned {len(srr_list)} SRRs: {', '.join(srr_list)}")
     success, fail = process_srr_list(srr_list, args, state, state_file)
-    logger.info(
-        f"Worker task {task_id} finished. Success={success}, Failed={fail}")
+    logger.info(f"Worker task {task_id} finished. Success={success}, Failed={fail}")
     if fail > 0:
         sys.exit(1)
 
@@ -490,8 +751,7 @@ def worker_mode(args):
 def create_manifest_and_script(args, srr_list, array_size):
     """Create manifest file and SLURM submission script for array job."""
     chunk_size = (len(srr_list) + array_size - 1) // array_size
-    chunks = [srr_list[i:i+chunk_size]
-              for i in range(0, len(srr_list), chunk_size)]
+    chunks = [srr_list[i:i+chunk_size] for i in range(0, len(srr_list), chunk_size)]
 
     manifest_path = os.path.join(args.output_dir, "srr_manifest.txt")
     with open(manifest_path, "w") as f:
@@ -506,21 +766,17 @@ def create_manifest_and_script(args, srr_list, array_size):
         f.write(f"#SBATCH --job-name={args.job_name}\n")
         f.write(f"#SBATCH --array=0-{array_size-1}\n")
         f.write(f"#SBATCH --partition={args.partition}\n")
-        f.write(
-            f"#SBATCH --qos={PARTITION_QOS_MAP.get(args.partition, 'normal')}\n")
+        f.write(f"#SBATCH --qos={PARTITION_QOS_MAP.get(args.partition, 'normal')}\n")
         # Request enough CPUs for parallel_jobs * threads
-        f.write(
-            f"#SBATCH --cpus-per-task={args.parallel_jobs * args.threads}\n")
+        f.write(f"#SBATCH --cpus-per-task={args.parallel_jobs * args.threads}\n")
         f.write(f"#SBATCH --mem={args.mem}\n")
         f.write(f"#SBATCH --time={args.time}\n")
         f.write(f"#SBATCH --output={args.output_dir}/slurm_%A_%a.out\n")
         f.write(f"#SBATCH --error={args.output_dir}/slurm_%A_%a.err\n")
         f.write("\n")
         # Use per-task state file
-        f.write(
-            f"STATE_FILE=\"{args.output_dir}/.state_$SLURM_ARRAY_TASK_ID.json\"\n")
-        f.write(
-            f"python {os.path.abspath(__file__)} --worker --manifest {manifest_path} ")
+        f.write(f"STATE_FILE=\"{args.output_dir}/.state_$SLURM_ARRAY_TASK_ID.json\"\n")
+        f.write(f"python {os.path.abspath(__file__)} --worker --manifest {manifest_path} ")
         f.write(f"--output-dir {args.output_dir} ")
         f.write(f"--state-file \"$STATE_FILE\" ")
         if args.max_size:
@@ -566,3 +822,212 @@ def create_manifest_and_script(args, srr_list, array_size):
     return script_path
 
 
+def submit_array_job(script_path):
+    """Submit the SLURM job."""
+    try:
+        result = subprocess.run(["sbatch", script_path], capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            logger.info(f"Array job submitted: {result.stdout.strip()}")
+            return True
+        else:
+            logger.error(f"Submission failed: {result.stderr.strip()}")
+            return False
+    except Exception as e:
+        logger.error(f"Error submitting: {e}")
+        return False
+
+
+# ----------------------------------------------------------------------
+# Main argument parsing
+# ----------------------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(
+        description="SRA retrieval and conversion (prefetch + fasterq-dump) for a BioProject/Study."
+    )
+    parser.add_argument("accession", help="BioProject (PRJ...) or SRA Study (SRP...) accession.")
+    parser.add_argument("-o", "--output-dir", default=".", help="Directory for final FASTQ.")
+    parser.add_argument("--temp-dir", help="Scratch directory for temporary files (sets TMPDIR).")
+    parser.add_argument("--threads", type=int, default=1,
+                        help="Number of threads per fasterq-dump conversion (default: 1).")
+    parser.add_argument("--parallel-jobs", type=int, default=1,
+                        help="Number of concurrent SRR conversions (default: 1).")
+    parser.add_argument("--max-size", help="Maximum .sra file size to download (e.g., '20G').")
+    parser.add_argument("--prefetch-path", help="Full path to prefetch executable.")
+    parser.add_argument("--conda-env", help="Conda environment name containing SRA Toolkit.")
+    parser.add_argument("--prefetch-extra", nargs=argparse.REMAINDER, help="Extra args for prefetch.")
+
+    # Convenience option
+    parser.add_argument("--sra-toolkit-bin", help="Directory containing both prefetch and fasterq-dump.")
+
+    # Prefetch flag (disabled by default)
+    parser.add_argument("--prefetch", dest="prefetch", action="store_true",
+                        help="Enable prefetch download of .sra files (default: disabled).")
+
+    # fasterq-dump options
+    parser.add_argument("--fasterq-dump", action="store_true", help="Enable conversion to FASTQ with fasterq-dump.")
+    parser.add_argument("--fasterq-dump-path", help="Full path to fasterq-dump executable.")
+    parser.add_argument("--no-gzip", action="store_true", help="Disable gzip compression during fasterq-dump.")
+    parser.add_argument("--compression-level", type=int, choices=range(1,10),
+                        help="If set, produce uncompressed FASTQ then compress with this gzip level (1-9).")
+    parser.add_argument("--keep-fastq", action="store_true",
+                        help="Keep uncompressed FASTQ files after separate compression (only with --compression-level).")
+    parser.add_argument("--fasterq-extra", nargs=argparse.REMAINDER, help="Extra args for fasterq-dump.")
+    parser.add_argument("--remove-sra", action="store_true", help="Delete .sra file after successful conversion.")
+    parser.add_argument("--skip-existing", action="store_true", help="Skip SRRs that already have FASTQ output.")
+
+    # HPC / array job options
+    parser.add_argument("--scheduler", choices=["slurm", "pbs"], help="Submit as array job to the specified scheduler.")
+    parser.add_argument("--array-size", type=int, default=10, help="Number of array tasks (default: 10).")
+    parser.add_argument("--partition", choices=list(PARTITION_QOS_MAP.keys()), default="batch",
+                        help="SLURM partition (default: batch).")
+    parser.add_argument("--job-name", default="sra_retrieval", help="Job name.")
+    parser.add_argument("--mem", default="16G", help="Memory per task (e.g., 16G).")
+    parser.add_argument("--time", default="24:00:00", help="Wall time limit (HH:MM:SS).")
+
+    # New options
+    parser.add_argument("--min-disk-space", type=float, default=DEFAULT_MIN_DISK_GB,
+                        help=f"Minimum free disk space in GB (default: {DEFAULT_MIN_DISK_GB}).")
+    parser.add_argument("--state-file", help="Path to state file for resume support (default: <output_dir>/.sra_state.json).")
+    parser.add_argument("--dry-run", action="store_true", help="Print commands without executing.")
+
+    # Worker mode (internal)
+    parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--manifest", help=argparse.SUPPRESS)
+
+    args = parser.parse_args()
+
+    # ------------------------------------------------------------------
+    # Resolve tool paths with priority: individual flags > --sra-toolkit-bin > inference
+    # ------------------------------------------------------------------
+    if args.sra_toolkit_bin:
+        if not os.path.isdir(args.sra_toolkit_bin):
+            logger.error(f"--sra-toolkit-bin directory does not exist: {args.sra_toolkit_bin}")
+            sys.exit(1)
+        if not args.prefetch_path:
+            args.prefetch_path = os.path.join(args.sra_toolkit_bin, "prefetch")
+        if args.fasterq_dump and not args.fasterq_dump_path:
+            args.fasterq_dump_path = os.path.join(args.sra_toolkit_bin, "fasterq-dump")
+
+    if args.fasterq_dump and not args.fasterq_dump_path and args.prefetch_path:
+        dir_name = os.path.dirname(args.prefetch_path)
+        args.fasterq_dump_path = os.path.join(dir_name, "fasterq-dump")
+        if not os.path.exists(args.fasterq_dump_path):
+            logger.warning(f"Inferred fasterq-dump path {args.fasterq_dump_path} does not exist. Please check.")
+            args.fasterq_dump_path = None
+
+    # Determine gzip flag
+    if args.compression_level is not None:
+        args.gzip = False
+    else:
+        args.gzip = args.fasterq_dump and not args.no_gzip
+
+    # Set state file path if not provided
+    if args.state_file is None:
+        args.state_file = os.path.join(args.output_dir, ".sra_state.json")
+
+    # Validate
+    if args.prefetch_path and args.conda_env:
+        logger.error("Provide either --prefetch-path or --conda-env, not both.")
+        sys.exit(1)
+    if args.fasterq_dump and not (args.prefetch_path or args.conda_env or args.fasterq_dump_path):
+        logger.error("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
+        sys.exit(1)
+    if args.keep_fastq and args.compression_level is None:
+        logger.error("--keep-fastq requires --compression-level.")
+        sys.exit(1)
+    if args.compression_level is not None and not args.fasterq_dump:
+        logger.error("--compression-level requires --fasterq-dump to be enabled.")
+        sys.exit(1)
+
+    # Create output directory
+    os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(os.path.join(args.output_dir, "logs"), exist_ok=True)  # for log files
+    if args.temp_dir:
+        os.makedirs(args.temp_dir, exist_ok=True)
+
+    # Disk space check (if not worker, worker will check again)
+    if not args.worker:
+        if not check_disk_space(args.output_dir, args.min_disk_space):
+            sys.exit(1)
+
+    # Worker mode: process manifest and exit
+    if args.worker:
+        if not check_disk_space(args.output_dir, args.min_disk_space):
+            sys.exit(1)
+        worker_mode(args)
+        return
+
+    # Check tools availability if not dry-run
+    if not args.dry_run:
+        if args.prefetch:
+            prefetch_cmd = [args.prefetch_path] if args.prefetch_path else (
+                ["conda", "run", "-n", args.conda_env, "prefetch"] if args.conda_env else ["prefetch"]
+            )
+            if not check_tool_available(prefetch_cmd):
+                logger.error("prefetch not found. Use --prefetch-path, --sra-toolkit-bin, or --conda-env.")
+                sys.exit(1)
+
+        if args.fasterq_dump:
+            fq_cmd = [args.fasterq_dump_path] if args.fasterq_dump_path else (
+                ["conda", "run", "-n", args.conda_env, "fasterq-dump"] if args.conda_env else ["fasterq-dump"]
+            )
+            if not check_tool_available(fq_cmd):
+                logger.error("fasterq-dump not found. Use --fasterq-dump-path, --sra-toolkit-bin, or --conda-env.")
+                sys.exit(1)
+
+    # Fetch SRR list
+    try:
+        srr_list = fetch_srr_list(args.accession)
+    except RuntimeError as e:
+        logger.error(str(e))
+        sys.exit(1)
+
+    if not srr_list:
+        logger.info("No SRRs to process.")
+        return
+
+    # If skip_existing and not scheduler, pre-filter
+    if args.skip_existing and not args.scheduler:
+        original_count = len(srr_list)
+        filtered = []
+        for srr in srr_list:
+            fastq_base = os.path.join(args.output_dir, srr)
+            if os.path.exists(f"{fastq_base}.fastq") or \
+               os.path.exists(f"{fastq_base}_1.fastq") or \
+               os.path.exists(f"{fastq_base}.fastq.gz") or \
+               os.path.exists(f"{fastq_base}_1.fastq.gz"):
+                continue
+            filtered.append(srr)
+        srr_list = filtered
+        skipped = original_count - len(srr_list)
+        if skipped:
+            logger.info(f"Skipped {skipped} SRRs with existing FASTQ.")
+        if not srr_list:
+            logger.info("All SRRs already have FASTQ output. Nothing to do.")
+            return
+
+    # Decide execution mode
+    if args.scheduler:
+        if args.scheduler != "slurm":
+            logger.error("Only SLURM scheduler is currently supported for array job submission.")
+            sys.exit(1)
+        if args.array_size < 1:
+            logger.error("--array-size must be >= 1.")
+            sys.exit(1)
+        script_path = create_manifest_and_script(args, srr_list, args.array_size)
+        submit_array_job(script_path)
+    else:
+        state = load_state(args.state_file)
+        try:
+            success, fail = process_srr_list(srr_list, args, state, args.state_file)
+            logger.info(f"Finished processing. Success={success}, Failed={fail}")
+            if fail > 0:
+                sys.exit(1)
+        except KeyboardInterrupt:
+            logger.warning("Interrupted by user. State saved for resume.")
+            save_state(args.state_file, state)
+            sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
