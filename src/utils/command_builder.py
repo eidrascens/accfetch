@@ -10,21 +10,21 @@ from src.utils.log.logger import Logger
 
 
 def build_prefetch_cmd(
-        prefetch_path: str,
+        prefetch_path: Path,
         srr: str,
-        output_dir: Path,
+        out_dir: Path,
         max_size: Optional[str],
         extra_args: Optional[list[str]],
-        conda_env: Optional[str],
-    ) -> list[str]:
+        conda_env: Optional[str] = None,
+    ) -> list[str | Path]:
     """Build the command list for running prefetch."""
     BASE_PREFETCH_CMD: list[str | Path] = [
             prefetch_path,
             srr,
             "-O",
-            output_dir
+            out_dir
         ]
-    cmd: list[str] = BASE_PREFETCH_CMD
+    cmd: list[str | Path] = BASE_PREFETCH_CMD
     if conda_env:
         cmd: list[str | Path]  = [
                 "conda",
@@ -41,26 +41,26 @@ def build_prefetch_cmd(
 
 
 def build_fasterq_dump_cmd(
-        sra_file: str,
-        output_dir: str,
+        sra_file: Path,
+        out_dir: Path,
         threads: int,
         fasterq_dump_path: Optional[str],
-        conda_env: Optional[str],
         extra_args: Optional[list[str]],
         temp_dir: Optional[str] = None,
-    ) -> list[str]:
+    ) -> list[str | Path]:
     """Build the command for fasterq-dump."""
     BASE_FD_CMD: list[str | Path] = [
             fasterq_dump_path,
             sra_file,
             "-O",
-            output_dir,
+            out_dir,
             "--threads",
             f"{threads}"
         ]
-    if temp_dir:
-        BASE_FD_CMD.extend(["-t", temp_dir])
     cmd: list[str | Path] = BASE_FD_CMD
+
+    if temp_dir:
+        cmd.extend(["-t", temp_dir])
     if extra_args:
         cmd.extend(extra_args)
     return cmd
@@ -82,7 +82,14 @@ def build_fasterq_dump_cmd(
 #     return
 
 
-def process_srr_list(srr_list, args, state, state_file):
+def process_srr_list(
+        log_: Logger,
+        out_dir: Path,
+        skip_existing: bool,
+        srr_list,
+        state,
+        state_file
+    ):
     """
     Process a list of SRRs: download, convert, clean up.
     Returns (success_count, fail_count).
@@ -90,42 +97,47 @@ def process_srr_list(srr_list, args, state, state_file):
 
     success = 0
     fail = 0
-    output_dir = Path(args.output_dir)
 
     for srr in srr_list:
-        print(f"[{srr}] Starting...")
-
         # Check if SRR already processed
-        if args.skip_existing and is_downloaded(srr, output_dir):
-            print(f"[{srr}] Skipping (already exists)")
+        if skip_existing and is_downloaded(srr, out_dir):
+            log_.info("[%s] already exists" % ( srr ))
             continue
 
-        sra_file = output_dir / f"{srr}.sra"
+        log_.info("[%s] Processing ..." % ( srr ))
+
+        sra_file = out_dir / f"{srr}.sra"
 
         # 1. Prefetch (download .sra)
         if args.prefetch:
             # Build command using the helper function
-            prefetch_cmd = build_prefetch_cmd(
-                prefetch_path=args.prefetch_path,
-                srr=srr,
-                output_dir=output_dir,
-                max_size=getattr(args, 'max_size', None),
-                extra_args=getattr(args, 'prefetch_extra', None),
-                conda_env=getattr(args, 'conda_env', None)
-            )
+            prefetch_cmd: list[str | Path] = build_prefetch_cmd(
+                    prefetch_path=args.prefetch_path,
+                    srr=srr,
+                    out_dir=out_dir,
+                    max_size=getattr(args, 'max_size', None),
+                    extra_args=getattr(args, 'prefetch_extra', None),
+                    conda_env=getattr(args, 'conda_env', None)
+                )
             # Do NOT add --no-subdirs (not supported by older prefetch)
-            print(f"[{srr}] Running: {' '.join(str(c) for c in prefetch_cmd)}")
-            result = subprocess.run(prefetch_cmd)
+            log_.info(
+                "[%s] Running: %s" % (
+                    srr, " ".join(
+                        f"{c}" for c in prefetch_cmd
+                    )
+                )
+            )
+            result = run(prefetch_cmd)
             if result.returncode != 0:
-                print(f"[{srr}] [FAIL] prefetch failed")
+                log_.info("[%s] prefetch failed." % ( srr ))
                 fail += 1
                 continue
 
             # Move .sra from subdirectory if it was created
-            sra_subdir = output_dir / srr
+            sra_subdir: Path = out_dir / srr
             if sra_subdir.is_dir():
-                sra_file_sub = sra_subdir / f"{srr}.sra"
-                if sra_file_sub.exists():
+                sra_file_sub: Path = sra_subdir / f"{srr}.sra"
+                if not sra_file_sub.exists():
                     sra_file_sub.rename(sra_file)
                     print(f"[{srr}] Moved .sra from subdirectory to main output")
                 else:
@@ -139,7 +151,7 @@ def process_srr_list(srr_list, args, state, state_file):
                     # Directory is not empty (has dependency files, cache, etc.)
                     pass
             else:
-                # If subdirectory doesn't exist, maybe .sra is already in output_dir
+                # If subdirectory doesn't exist, maybe .sra is already in out_dir
                 if not sra_file.exists():
                     print(f"[{srr}] [WARN] .sra file not found in expected location")
 
@@ -152,7 +164,7 @@ def process_srr_list(srr_list, args, state, state_file):
 
             fq_cmd = build_fasterq_dump_cmd(
                 sra_file=str(sra_file),
-                output_dir=str(output_dir),
+                out_dir=str(out_dir),
                 threads=args.threads,
                 fasterq_dump_path=args.fasterq_dump_path,
                 conda_env=getattr(args, 'conda_env', None),
@@ -173,8 +185,8 @@ def process_srr_list(srr_list, args, state, state_file):
             keep_fastq = getattr(args, "keep_fastq", False)
 
             # Match both single-end (SRR.fastq) and paired-end (SRR_1.fastq, SRR_2.fastq)
-            candidates = [output_dir / f"{srr}.fastq"]
-            candidates.extend(output_dir.glob(f"{srr}_*.fastq"))
+            candidates = [out_dir / f"{srr}.fastq"]
+            candidates.extend(out_dir.glob(f"{srr}_*.fastq"))
             fastq_files = [f for f in candidates if f.exists()]
 
             if not fastq_files:
