@@ -59,20 +59,20 @@ def build_fasterq_dump_cmd(
     return cmd
 
 
-# ====== STUB FUNCTIONS (not used without --scheduler) ======
-
-def create_manifest_and_script(args, srr_list, array_size):
-    """Stub: create manifest and SLURM script for array job."""
-    # This is only used with --scheduler, which we're not using.
-    # Return a dummy script path to satisfy the import.
-    return "/tmp/dummy_script.sh"
-
-
-def submit_array_job(script_path):
-    """Stub: submit array job to SLURM."""
-    # This is only used with --scheduler, which we're not using.
-    print(f"Array job would be submitted with script: {script_path}")
-    return
+# # ====== STUB FUNCTIONS (not used without --scheduler) ======
+#
+# def create_manifest_and_script(args, srr_list, array_size):
+#     """Stub: create manifest and SLURM script for array job."""
+#     # This is only used with --scheduler, which we're not using.
+#     # Return a dummy script path to satisfy the import.
+#     return "/tmp/dummy_script.sh"
+#
+#
+# def submit_array_job(script_path):
+#     """Stub: submit array job to SLURM."""
+#     # This is only used with --scheduler, which we're not using.
+#     print(f"Array job would be submitted with script: {script_path}")
+#     return
 
 
 def process_srr_list(srr_list, args, state, state_file):
@@ -239,9 +239,9 @@ def _compress_fastq(fastq_path, level=6, keep_original=False, threads=4):
     return gz_path
 
 
-def worker_mode(args):
-    """Stub: worker mode for array jobs."""
-    # Only used with --worker flag (internal for array jobs).
-    # Not used in our test.
-    print("Worker mode stub called.")
-    return
+# def worker_mode(args):
+#     """Stub: worker mode for array jobs."""
+#     # Only used with --worker flag (internal for array jobs).
+#     # Not used in our test.
+#     print("Worker mode stub called.")
+#     return
