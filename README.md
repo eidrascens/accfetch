@@ -43,6 +43,10 @@ A few deliberate choices shape how this pipeline behaves:
   post-conversion step, which also allows alternative compressors
   to be swapped in if needed.
 
+# Usage
+
+See [USAGE.md](./USAGE.md)
+
 # References
 
 - [SRA Toolkit Wiki](https://github.com/ncbi/sra-tools/wiki)
