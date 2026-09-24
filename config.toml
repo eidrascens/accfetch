@@ -1,5 +1,19 @@
+[parameters]
 ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+
+ESEARCH_PARAMS = {
+    "db": "sra",
+    "term": f"{accession}[Accession]",
+    "retmax": 100000,
+    "retmode": "json",
+}
+EFETCH_PARAMS = {
+    "db": "sra",
+    "id": uid_string,
+    "rettype": "runinfo",
+    "retmode": "text",
+}
 PARTITION_QOS_MAP = {
     debug = "debug_default",
     batch = "batch_default",
