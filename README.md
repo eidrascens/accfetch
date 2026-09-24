@@ -21,7 +21,6 @@ multiple studies on HPC clusters.
 | DDBJ | `PRJDB...` | `DRP...` | `DRR...` |
 | ENA | `PRJEB...` | `ERP...` | `ERR...` |
 
----
 
 # Design Choices
 
@@ -43,6 +42,10 @@ A few deliberate choices shape how this pipeline behaves:
   post-conversion step, which also allows alternative compressors
   to be swapped in if needed.
 
+# Installation
+
+Refer to [INSTALL.md](./INSTALL.md).
+
 # Usage
 
 See [USAGE.md](./USAGE.md)
@@ -56,7 +59,7 @@ See [USAGE.md](./USAGE.md)
 
 # Contributors
 
-Developed and maintained jointly by `eidrascens` and `gerryjr.ramos`.
+Developed and maintained by eidrascens and gerryjr.ramos.
 
 # Acknowledgments
 
