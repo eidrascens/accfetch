@@ -1,4 +1,4 @@
-import subprocess
+from os.path import exists
 import shutil
 import gzip
 from subprocess import run
@@ -215,7 +215,7 @@ def process_srr_list(srr_list, args, state, state_file):
 def _compress_fastq(
         log_: Logger,
         fastq_path: Path,
-        piz_path: Path,
+        pigz_path: Path,
         level: int = 6,
         keep_original: bool =False,
         threads: int = 4
@@ -229,8 +229,10 @@ def _compress_fastq(
 
     try:
         # pigz: -N = level, -p = threads, -k = keep original, -f = force overwrite
+        if not exists(pigz_path):
+            raise RuntimeError("%s does not exists." % ( pigz_path ))
         cmd = [
-                piz_path,
+                pigz_path,
                 f"-{level}",
                 "-p",
                 f"{threads}",
@@ -249,7 +251,7 @@ def _compress_fastq(
                 gz_path, "wb", compresslevel=level
             ) as f_out:
             shutil.copyfileobj(f_in, f_out)
-            
+
         if not keep_original:
             fastq_path.unlink()
 
