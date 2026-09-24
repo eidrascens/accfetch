@@ -19,7 +19,7 @@ def submit_array_job(log_: Logger, script_path: Path):
             )
         log_.err("Submission failed: %s" % ( result.stderr.strip() ))
     except Exception as err:
-        log_.err("Error submitting: %s" % err, err)
+        log_.err("Error submitting: %s" % ( err ), err)
     else:
         return True
 

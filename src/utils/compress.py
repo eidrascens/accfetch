@@ -41,7 +41,7 @@ def compress_fastq_file(
         remove_file(log, fastq_path)
     except Exception as err_:
         log.err(
-            "Compression failed for %s" % (fastq_path), err_
+            "Cannot compress %s" % ( fastq_path ), err_
         )
     else:
         return True

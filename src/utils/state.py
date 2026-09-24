@@ -21,11 +21,15 @@ class State:
         """Load state from JSON file."""
 
         try:
-            with open(self.state_file, "r", encoding="utf-8") as file:
+            with open(
+                    self.state_file, "r", encoding="utf-8"
+                ) as file:
                 return load(file)
         except (FileNotFoundError) as _:
             self.log_.warn(
-                "Error reading %s, starting fresh." % ( self.state_file )
+                "Error reading %s, starting fresh." % (
+                    self.state_file
+                )
             )
 
     def save_state(self) -> None:

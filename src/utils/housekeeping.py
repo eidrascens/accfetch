@@ -19,26 +19,23 @@ def is_downloaded(srr: str, output_dir: Path) -> bool:
             ) and exists(
                 output_dir / f"{srr}_2.fastq.gz"
             )
-        ) or exists(output_dir / f"{srr}.fastq.gz")
+        ) or exists(
+            output_dir / f"{srr}.fastq.gz"
+        )
 
 
 def remove_file(log: Logger, file_path: Path) -> None:
-    if not exists(file_path):
-        log.info(
-            "%s does not exist." % ( file_path )
-        )
-        return
-
     try:
         remove(file_path)
+    except FileNotFoundError as _:
+        log.info("%s does not exist." % ( file_path ))
     except (
-        FileNotFoundError,
         OSError,
         PermissionError,
         SystemError
-    ) as err:
-        log.err(
-            "Cannot remove %s" % ( file_path ), err
+    ) as err_:
+        log.err_(
+            "Cannot remove %s" % ( file_path ), err_
         )
 
 
@@ -96,7 +93,9 @@ def fetch_srr_list(accession):
             )
 
         if result.returncode != 0:
-            raise RuntimeError(f"Failed to fetch SRR list for {accession}")
+            raise RuntimeError(
+                f"Failed to fetch SRR list for {accession}"
+            )
 
         # Accept NCBI (SRR), DDBJ (DRR), and ENA (ERR) run prefixes
         srr_list = [
@@ -108,8 +107,8 @@ def fetch_srr_list(accession):
             ]
         return srr_list
 
-    except Exception as err:
-        raise RuntimeError from err
+    except Exception as err_:
+        raise RuntimeError from err_
 
 
 def check_dir(log_: Logger, path_arr: list[Path]) -> list[Path]:
