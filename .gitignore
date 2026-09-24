@@ -5,8 +5,7 @@ __pycache__/
 .pytest_cache/
 
 # SRA pipeline temp and output
-sra_all_*.log
-sra_test_*.log
+*.log
 fasterq.tmp.*
 *.sra
 *.fastq
@@ -14,3 +13,4 @@ fasterq.tmp.*
 
 # OS
 .DS_Store
+    
