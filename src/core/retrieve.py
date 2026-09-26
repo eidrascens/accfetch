@@ -67,21 +67,9 @@ class Retrieve:
                 self.prog["OUT_DIR"] / "logs"
             ]
         fix_dir(log_, DIR)
-        
-        if temp_dir:
-            os.makedirs(temp_dir, exist_ok=True)
 
-        # Disk space check (if not worker, worker will check again)
-        if not worker:
-            if not check_disk_space(output_dir, min_disk_space):
-                raise SystemExit
-
-        # Worker mode: process manifest and exit
-        if worker:
-            if not check_disk_space(log_, output_dir, min_disk_space):
-                raise SystemExit
-            worker_mode(args)
-            return
+        if tmp_dir:
+            os.makedirs(tmp_dir, exist_ok=True)
 
         # Check tools availability if not dry-run
         if not dry_run:
