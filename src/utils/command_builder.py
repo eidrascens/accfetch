@@ -9,59 +9,58 @@ from src.utils.housekeeping import remove_file, is_downloaded
 from src.utils.log.logger import Logger
 
 
-def build_prefetch_cmd(
-        prefetch_path: Path,
-        srr: str,
-        out_dir: Path,
-        max_size: Optional[str],
-        extra_args: Optional[list[str]],
-        conda_env: Optional[str] = None,
-    ) -> list[str | Path]:
-    """Build the command list for running prefetch."""
-    BASE_PREFETCH_CMD: list[str | Path] = [
-            prefetch_path,
-            srr,
-            "-O",
-            out_dir
-        ]
-    cmd: list[str | Path] = BASE_PREFETCH_CMD
-    if conda_env:
-        cmd: list[str | Path]  = [
-                "conda",
-                "run",
-                "-n",
-                conda_env,
-            ].extend(BASE_PREFETCH_CMD)
+class BuildCmd:
+    def __init__(self: Self, out_dir: Path) -> None:
+        self.out_dir: Path = out_dir
+
+    def build_prefetch_cmd(
+            self: Self,
+            srr: str,
+            prefetch_path: Path,
+            max_size: Optional[int] = None,
+            conda_env: Optional[str] = None,
+        ) -> list[str | Path]:
+        """Build the command list for running prefetch."""
+        BASE_PREFETCH_CMD: list[str | Path] = [
+                prefetch_path,
+                srr,
+                "-O",
+                self.out_dir
+            ]
+        cmd: list[str | Path] = BASE_PREFETCH_CMD
+        if conda_env:
+            cmd: list[str | Path]  = [
+                    "conda",
+                    "run",
+                    "-n",
+                    conda_env,
+                ].extend(BASE_PREFETCH_CMD)
 
         return cmd.extend(
                 ["--max-size", max_size]
             ) if max_size else cmd
 
 
-def build_fasterq_dump_cmd(
-        sra_file: Path,
-        out_dir: Path,
-        threads: int,
-        fasterq_dump_path: Optional[str],
-        extra_args: Optional[list[str]],
-        temp_dir: Optional[str] = None,
-    ) -> list[str | Path]:
-    """Build the command for fasterq-dump."""
-    BASE_FD_CMD: list[str | Path] = [
-            fasterq_dump_path,
-            sra_file,
-            "-O",
-            out_dir,
-            "--threads",
-            f"{threads}"
-        ]
-    cmd: list[str | Path] = BASE_FD_CMD
+    def build_fasterq_dump_cmd(
+            self: Self,
+            sra_file: Path,
+            fasterq_dump_path: Path,
+            threads: int,
+            tmp_dir: Optional[Path] = None,
+        ) -> list[str | Path]:
+        """Build the command for fasterq-dump."""
+        BASE_FD_CMD: list[str | Path] = [
+                fasterq_dump_path,
+                sra_file,
+                "-O",
+                self.out_dir,
+                "--threads",
+                f"{threads}",
+            ]
 
-    if temp_dir:
-        cmd.extend(["-t", temp_dir])
-    if extra_args:
-        cmd.extend(extra_args)
-    return cmd
+        return BASE_FD_CMD.extend(
+                ["-t", tmp_dir]
+            ) if tmp_dir else BASE_FD_CMD
 
 
 # # ====== STUB FUNCTIONS (not used without --scheduler) ======
