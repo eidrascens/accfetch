@@ -1,13 +1,14 @@
 def fetch_srr_list(accession: str) -> List[str]:
     """Fetch all SRR run accessions for a given BioProject or SRA Study accession."""
-    logger.info(f"Fetching SRR list for accession: {accession}")
+    log_.info(
+        "Fetching SRR list for accession: %s" % ( accession )
+    )
 
-    esearch_params = {
-        "db": "sra",
-        "term": f"{accession}[Accession]",
-        "retmax": 100000,
-        "retmode": "json",
-    }
+    ESEARCH_URL = conf["programs"]["ESEARCH_URL"]
+    EFETCH_URL = conf["programs"]["EFETCH_URL"]
+    ESEARCH_PARAMS = conf["programs"]["ESEARCH_PARAMS"]
+    EFETCH_PARAMS = conf["programs"]["EFETCH_PARAMS"]
+
     try:
         response = requests.get(ESEARCH_URL, params=esearch_params, timeout=30)
         response.raise_for_status()
@@ -21,12 +22,7 @@ def fetch_srr_list(accession: str) -> List[str]:
         raise RuntimeError(f"ESearch request failed: {e}")
 
     uid_string = ",".join(uid_list)
-    efetch_params = {
-        "db": "sra",
-        "id": uid_string,
-        "rettype": "runinfo",
-        "retmode": "text",
-    }
+
     try:
         response = requests.get(EFETCH_URL, params=efetch_params, timeout=60)
         response.raise_for_status()
