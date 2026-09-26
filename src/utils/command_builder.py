@@ -3,7 +3,7 @@ import shutil
 import gzip
 from subprocess import run
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Self
 
 from src.utils.housekeeping import remove_file, is_downloaded
 from src.utils.log.logger import Logger
@@ -166,7 +166,7 @@ def process_srr_list(
                 fasterq_dump_path=args.fasterq_dump_path,
                 conda_env=getattr(args, 'conda_env', None),
                 extra_args=getattr(args, 'fasterq_extra', None),
-                temp_dir=getattr(args, 'temp_dir', None)
+                tmp_dir=getattr(args, 'tmp_dir', None)
             )
             print(f"[{srr}] Running: {' '.join(str(c) for c in fq_cmd)}")
             result = subprocess.run(fq_cmd)
@@ -221,50 +221,6 @@ def process_srr_list(
     return success, fail
 
 
-def _compress_fastq(
-        log_: Logger,
-        fastq_path: Path,
-        pigz_path: Path,
-        level: int = 6,
-        keep_original: bool =False,
-        threads: int = 4
-    ):
-    """
-    Compress a single FASTQ file.
-    Prefers `pigz` (parallel) if available; falls back to Python's gzip.
-    """
-
-    gz_path = fastq_path.with_suffix(fastq_path.suffix + ".gz")
-
-    try:
-        # pigz: -N = level, -p = threads, -k = keep original, -f = force overwrite
-        if not exists(pigz_path):
-            raise RuntimeError("%s does not exists." % ( pigz_path ))
-        cmd = [
-                pigz_path,
-                f"-{level}",
-                "-p",
-                f"{threads}",
-                "-k" if keep_original else "-f",
-                f"{fastq_path}"
-            ]
-        run(cmd, check=True)
-    except RuntimeError as err_:
-        log_.warn(
-            "Runtime error: falling back to Python Gzip", err_
-        )
-
-        with open(
-                fastq_path, "rb"
-            ) as f_in, gzip.open(
-                gz_path, "wb", compresslevel=level
-            ) as f_out:
-            shutil.copyfileobj(f_in, f_out)
-
-        if not keep_original:
-            fastq_path.unlink()
-
-    return gz_path
 
 
 # def worker_mode(args):
