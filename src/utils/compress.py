@@ -8,7 +8,7 @@ from src.utils.housekeeping import remove_file
 
 
 def compress_fastq_file(
-        log: Logger,
+        log_: Logger,
         fastq_path: Path,
         compression_level: int,
     ) -> bool:
@@ -20,7 +20,7 @@ def compress_fastq_file(
             )
         )
     gz_path: Path = Path(out_dir / f"{fastq_path}.gz")
-    log.info(
+    log_.info(
         "Compressing %s -> %s (level: %d)" % (
             fastq_path, gz_path, compression_level
         )
@@ -38,14 +38,14 @@ def compress_fastq_file(
                 fileobj=f_out
             ) as gz_out:
                 copyfileobj(f_in, gz_out)
-        remove_file(log, fastq_path)
+        remove_file(log_, fastq_path)
     except Exception as err_:
-        log.err(
+        log_.err(
             "Cannot compress %s" % ( fastq_path ), err_
         )
     else:
         return True
 
-    remove_file(log, gz_path)
+    remove_file(log_, gz_path)
     return False
 
