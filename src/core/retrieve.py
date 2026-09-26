@@ -49,16 +49,16 @@ class Retrieve:
 
         # Validate
         if prefetch_path and conda_env:
-            log_.err("Provide either --prefetch-path or --conda-env, not both.")
+            self.log_.err("Provide either --prefetch-path or --conda-env, not both.")
             raise SystemExit
         if fasterq_dump and not (prefetch_path or conda_env or fasterq_dump_path):
-            log_.err("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
+            self.log_.err("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
             raise SystemExit
         if keep_fastq and compression_level is None:
-            log_.err("--keep-fastq requires --compression-level.")
+            self.log_.err("--keep-fastq requires --compression-level.")
             raise SystemExit
         if compression_level is not None and not fasterq_dump:
-            log_.err("--compression-level requires --fasterq-dump to be enabled.")
+            self.log_.err("--compression-level requires --fasterq-dump to be enabled.")
             raise SystemExit
 
         # Create output directory
@@ -77,11 +77,11 @@ class Retrieve:
         try:
             srr_list = fetch_srr_list(accession)
         except RuntimeError as e:
-            log_.err(str(e))
+            self.log_.err(str(e))
             raise SystemExit
 
         if not srr_list:
-            log_.info("No SRRs to process.")
+            self.log_.info("No SRRs to process.")
             return
 
         # If skip_existing and not scheduler, pre-filter
@@ -99,18 +99,18 @@ class Retrieve:
             srr_list = filtered
             skipped = original_count - len(srr_list)
             if skipped:
-                log_.info(f"Skipped {skipped} SRRs with existing FASTQ.")
+                self.log_.info(f"Skipped {skipped} SRRs with existing FASTQ.")
             if not srr_list:
-                log_.info("All SRRs already have FASTQ output. Nothing to do.")
+                self.log_.info("All SRRs already have FASTQ output. Nothing to do.")
                 return
 
         # Decide execution mode
         if scheduler:
             if scheduler != "slurm":
-                log_.err("Only SLURM scheduler is currently supported for array job submission.")
+                self.log_.err("Only SLURM scheduler is currently supported for array job submission.")
                 raise SystemExit
             if array_size < 1:
-                log_.err("--array-size must be >= 1.")
+                self.log_.err("--array-size must be >= 1.")
                 raise SystemExit
             script_path = create_manifest_and_script(args, srr_list, array_size)
             submit_array_job(script_path)
@@ -118,7 +118,7 @@ class Retrieve:
             state = load_state(state_file)
             try:
                 success, fail = process_srr_list(srr_list, args, state, state_file)
-                log_.info(f"Finished processing. Success={success}, Failed={fail}")
+                self.log_.info(f"Finished processing. Success={success}, Failed={fail}")
                 if fail > 0:
                     raise SystemExit
             except KeyboardInterrupt:
