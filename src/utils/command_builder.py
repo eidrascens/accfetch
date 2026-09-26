@@ -33,11 +33,9 @@ def build_prefetch_cmd(
                 conda_env,
             ].extend(BASE_PREFETCH_CMD)
 
-    if max_size:
-        cmd.extend(["--max-size", max_size])
-    if extra_args:
-        cmd.extend(extra_args)
-    return cmd
+        return cmd.extend(
+                ["--max-size", max_size]
+            ) if max_size else cmd
 
 
 def build_fasterq_dump_cmd(
