@@ -1,4 +1,4 @@
-def fetch_srr_list(accession: str) -> List[str]:
+from requests import get, exceptions
     """Fetch all SRR run accessions for a given BioProject or SRA Study accession."""
     log_.info(
         "Fetching SRR list for accession: %s" % ( accession )
@@ -10,25 +10,37 @@ def fetch_srr_list(accession: str) -> List[str]:
     EFETCH_PARAMS = conf["programs"]["EFETCH_PARAMS"]
 
     try:
-        response = requests.get(ESEARCH_URL, params=esearch_params, timeout=30)
+        response = get(
+                ESEARCH_URL,
+                params=ESEARCH_PARAMS,
+                timeout=30
+            )
         response.raise_for_status()
         esearch_data = response.json()
-        uid_list = esearch_data.get("esearchresult", {}).get("idlist", [])
+        uid_list = esearch_data.get(
+                "esearchresult", {}).get("idlist", []
+            )
         if not uid_list:
             raise RuntimeError(
-                f"No SRA records found for accession: {accession}")
-        logger.info(f"Found {len(uid_list)} SRA UIDs.")
-    except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"ESearch request failed: {e}")
+    except exceptions.RequestException as err_:
+        raise RuntimeError(
+                f"ESearch request failed: {err_}"
+            ) from err_
 
     uid_string = ",".join(uid_list)
 
     try:
-        response = requests.get(EFETCH_URL, params=efetch_params, timeout=60)
+        response = get(
+                EFETCH_URL,
+                params=EFETCH_PARAMS,
+                timeout=60
+            )
         response.raise_for_status()
         csv_text = response.text
-    except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"EFetch request failed: {e}")
+    except exceptions.RequestException as err_:
+        raise RuntimeError(
+                f"EFetch request failed: {e}"
+            ) from err_
 
     lines = csv_text.strip().splitlines()
     if len(lines) < 2:
