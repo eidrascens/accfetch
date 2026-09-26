@@ -71,23 +71,7 @@ class Retrieve:
         if tmp_dir:
             os.makedirs(tmp_dir, exist_ok=True)
 
-        # Check tools availability if not dry-run
-        if not dry_run:
-            if prefetch:
-                prefetch_cmd = [prefetch_path] if prefetch_path else (
-                    ["conda", "run", "-n", conda_env, "prefetch"] if conda_env else ["prefetch"]
-                )
-                if not check_tool_available(prefetch_cmd):
-                    log_.err("prefetch not found. Use --prefetch-path, --sra-toolkit-bin, or --conda-env.")
-                    raise SystemExit
 
-            if fasterq_dump:
-                fq_cmd = [fasterq_dump_path] if fasterq_dump_path else (
-                    ["conda", "run", "-n", conda_env, "fasterq-dump"] if conda_env else ["fasterq-dump"]
-                )
-                if not check_tool_available(fq_cmd):
-                    log_.err("fasterq-dump not found. Use --fasterq-dump-path, --sra-toolkit-bin, or --conda-env.")
-                    raise SystemExit
 
         # Fetch SRR list
         try:
