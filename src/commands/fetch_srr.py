@@ -1,4 +1,9 @@
 from requests import get, exceptions
+
+from src.utils.log.logger import Logger
+
+
+def fetch_srr_list(log_: Logger, conf, accession: str) -> list[str]:
     """Fetch all SRR run accessions for a given BioProject or SRA Study accession."""
     log_.info(
         "Fetching SRR list for accession: %s" % ( accession )
@@ -22,6 +27,7 @@ from requests import get, exceptions
             )
         if not uid_list:
             raise RuntimeError(
+        log_.info("Found %s SRA UIDs." % ( len(uid_list) ))
     except exceptions.RequestException as err_:
         raise RuntimeError(
                 f"ESearch request failed: {err_}"
@@ -69,5 +75,5 @@ from requests import get, exceptions
     if not srr_list:
         raise RuntimeError(f"No SRR runs found for accession: {accession}")
 
-    logger.info(f"Total SRR runs to process: {len(srr_list)}")
+    log_.info(f"Total SRR runs to process: {len(srr_list)}")
     return srr_list
