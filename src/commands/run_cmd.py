@@ -28,7 +28,11 @@ class RunCMD:
         fasterq_dump_cmd = self.cmd.build_fasterq_dump_cmd(
                 sra_path, TMP_DIR
             )
-        self.log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
+        self.log_.info(
+            "Running fasterq-dump for %s: %s" % (
+                srr, fasterq_dump_cmd
+            )
+        )
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f_:
                 result = run(
@@ -72,6 +76,10 @@ class RunCMD:
         Returns True on success.
         """
         prefetch_cmd = self.cmd.build_prefetch_cmd(srr, max_size)
+        self.log_.info("Running prefetch for %s: %s" % (
+                srr, prefetch_cmd
+            )
+        )
         try:
 
             with open(CMD_LOG, "a", encoding="utf-8") as log_f_:
@@ -85,6 +93,10 @@ class RunCMD:
                     )
             if result.returncode != 0:
                 raise RuntimeError
+
+            self.log_.info(
+                "prefetch succeeded for %s" % ( srr )
+            )
         except (RuntimeError, CalledProcessError) as err_:
             self.log_.err(
                 "prefetch failed for %s (log: %s)" % (
