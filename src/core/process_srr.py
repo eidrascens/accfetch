@@ -1,4 +1,7 @@
+from src.utils.log.logger import Logger
+
 def process_single_srr(
+    log_: Logger,
     srr: str,
     state: Dict[str, Any],
     state_file: str,
@@ -22,7 +25,7 @@ def process_single_srr(
             os.path.exists(f"{fastq_base}_1.fastq.gz")
         )
         if existing_fastq:
-            logger.info(f"Skipping {srr}: FASTQ output already exists.")
+            log_.info(f"Skipping {srr}: FASTQ output already exists.")
             return True
 
     # 1. Prefetch (only if enabled)
@@ -33,7 +36,7 @@ def process_single_srr(
                 srr, output_dir, max_size, prefetch_extra, prefetch_path, conda_env, temp_dir, log_file
             )
             if not prefetch_ok:
-                logger.error(f"Prefetch failed for {srr}, skipping conversion.")
+                log_.error(f"Prefetch failed for {srr}, skipping conversion.")
                 return False
             if lock:
                 with lock:
@@ -43,9 +46,9 @@ def process_single_srr(
                 update_state(state, srr, 'prefetch', True)
                 save_state(state_file, state)
         else:
-            logger.info(f"Prefetch already done for {srr} (from state).")
+            log_.info(f"Prefetch already done for {srr} (from state).")
     else:
-        logger.info(f"Skipping prefetch for {srr} (disabled).")
+        log_.info(f"Skipping prefetch for {srr} (disabled).")
 
     # Locate actual sra path
     actual_sra_path = None
@@ -58,10 +61,10 @@ def process_single_srr(
                     actual_sra_path = os.path.join(root, f)
                     break
         if not actual_sra_path:
-            logger.error(f"Could not find .sra file in directory {sra_dir} for {srr}")
+            log_.error(f"Could not find .sra file in directory {sra_dir} for {srr}")
             return False
     else:
-        logger.error(f"No .sra file or directory found for {srr} in {output_dir}")
+        log_.error(f"No .sra file or directory found for {srr} in {output_dir}")
         return False
 
     # 2. Conversion
@@ -74,7 +77,7 @@ def process_single_srr(
                     fasterq_dump_path, conda_env, gzip, fasterq_extra, log_file
                 )
                 if not conv_ok:
-                    logger.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                    log_.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                     return False
                 if lock:
                     with lock:
@@ -93,7 +96,7 @@ def process_single_srr(
                     fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
                 )
                 if not conv_ok:
-                    logger.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                    log_.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                     return False
                 if lock:
                     with lock:
@@ -117,7 +120,7 @@ def process_single_srr(
                             if f.startswith(srr) and f.endswith(".fastq"):
                                 fastq_files.append(os.path.join(output_dir, f))
                     if not fastq_files:
-                        logger.error(f"No FASTQ files found for compression for {srr}")
+                        log_.error(f"No FASTQ files found for compression for {srr}")
                         return False
 
                     compress_ok = True
@@ -126,7 +129,7 @@ def process_single_srr(
                             compress_ok = False
                             break
                     if not compress_ok:
-                        logger.error(f"Compression failed for some files of {srr}")
+                        log_.error(f"Compression failed for some files of {srr}")
                         return False
                     if lock:
                         with lock:
@@ -136,24 +139,25 @@ def process_single_srr(
                         update_state(state, srr, 'compressed', True)
                         save_state(state_file, state)
         else:
-            logger.info(f"Conversion already done for {srr} (from state).")
+            log_.info(f"Conversion already done for {srr} (from state).")
 
         if remove_sra:
             if compression_level is None or get_state(state, srr, 'compressed', False):
                 try:
                     if os.path.isfile(actual_sra_path):
                         os.remove(actual_sra_path)
-                        logger.info(f"Removed {actual_sra_path}")
+                        log_.info(f"Removed {actual_sra_path}")
                     elif os.path.isdir(sra_dir):
                         shutil.rmtree(sra_dir)
-                        logger.info(f"Removed directory {sra_dir}")
+                        log_.info(f"Removed directory {sra_dir}")
                 except Exception as e:
-                    logger.warning(f"Failed to remove .sra for {srr}: {e}")
+                    log_.warning(f"Failed to remove .sra for {srr}: {e}")
 
     return True
 
 
 def process_srr_list(
+    log_: Logger,
     srr_list: List[str],
     args,
     state: Dict[str, Any],
@@ -168,7 +172,7 @@ def process_srr_list(
     lock = threading.Lock() if parallel_jobs > 1 else None
 
     if parallel_jobs > 1:
-        logger.info(f"Processing {len(srr_list)} SRRs with {parallel_jobs} parallel jobs.")
+        log_.info(f"Processing {len(srr_list)} SRRs with {parallel_jobs} parallel jobs.")
         with concurrent.futures.ThreadPoolExecutor(max_workers=parallel_jobs) as executor:
             futures = {
                 executor.submit(
@@ -186,7 +190,7 @@ def process_srr_list(
                     success += 1
                 else:
                     fail += 1
-                logger.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
+                log_.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
     else:
         # sequential mode, no lock needed
         for srr in srr_list:
@@ -216,6 +220,6 @@ def process_srr_list(
                 success += 1
             else:
                 fail += 1
-            logger.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
+            log_.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
 
     return success, fail
