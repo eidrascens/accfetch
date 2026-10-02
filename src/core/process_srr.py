@@ -35,26 +35,23 @@ def process_single_srr(
             return True
 
     # 1. Prefetch (only if enabled)
-    if do_prefetch:
-        prefetch_done = get_state(state, srr, 'prefetch', False)
-        if not prefetch_done:
-            prefetch_ok = run_prefetch(
-                srr, OUT_DIR, max_size, temp_dir, log_file
-            )
-            if not prefetch_ok:
-                log_.err(f"Prefetch failed for {srr}, skipping conversion.")
-                return False
-            if lock:
-                with lock:
-                    update_state(state, srr, 'prefetch', True)
-                    save_state(state_file, state)
-            else:
+    prefetch_done = get_state(state, srr, 'prefetch', False)
+    if not prefetch_done:
+        prefetch_ok = run_prefetch(
+            srr, OUT_DIR, max_size, temp_dir, log_file
+        )
+        if not prefetch_ok:
+            log_.err(f"Prefetch failed for {srr}, skipping conversion.")
+            return False
+        if lock:
+            with lock:
                 update_state(state, srr, 'prefetch', True)
                 save_state(state_file, state)
         else:
-            log_.info(f"Prefetch already done for {srr} (from state).")
+            update_state(state, srr, 'prefetch', True)
+            save_state(state_file, state)
     else:
-        log_.info(f"Skipping prefetch for {srr} (disabled).")
+        log_.info(f"Prefetch already done for {srr} (from state).")
 
     # Locate actual sra path
     actual_sra_path = None
@@ -73,91 +70,88 @@ def process_single_srr(
         log_.err(f"No .sra file or directory found for {srr} in {OUT_DIR}")
         return False
 
-    # 2. Conversion
-    if run_fastq:
-        conversion_done = get_state(state, srr, 'converted', False)
-        if not conversion_done:
-            if compression_level is None:
-                conv_ok = run_fasterq_dump(
-                    srr, actual_sra_path, OUT_DIR,,
-                    fasterq_dump_path, log_file
-                )
-                if not conv_ok:
-                    log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
-                    return False
-                if lock:
-                    with lock:
-                        update_state(state, srr, 'converted', True)
-                        if gzip:
-                            update_state(state, srr, 'compressed', True)
-                        save_state(state_file, state)
-                else:
+    conversion_done = get_state(state, srr, 'converted', False)
+    if not conversion_done:
+        if compression_level is None:
+            conv_ok = run_fasterq_dump(
+                srr, actual_sra_path, OUT_DIR,,
+                fasterq_dump_path, log_file
+            )
+            if not conv_ok:
+                log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                return False
+            if lock:
+                with lock:
                     update_state(state, srr, 'converted', True)
                     if gzip:
                         update_state(state, srr, 'compressed', True)
                     save_state(state_file, state)
             else:
-                conv_ok = run_fasterq_dump(
-                    srr, actual_sra_path, OUT_DIR, threads,
-                    fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
-                )
-                if not conv_ok:
-                    log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                update_state(state, srr, 'converted', True)
+                if gzip:
+                    update_state(state, srr, 'compressed', True)
+                save_state(state_file, state)
+        else:
+            conv_ok = run_fasterq_dump(
+                srr, actual_sra_path, OUT_DIR, threads,
+                fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
+            )
+            if not conv_ok:
+                log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                return False
+            if lock:
+                with lock:
+                    update_state(state, srr, 'converted', True)
+                    save_state(state_file, state)
+            else:
+                update_state(state, srr, 'converted', True)
+                save_state(state_file, state)
+
+            compression_done = get_state(state, srr, 'compressed', False)
+            if not compression_done:
+                fastq_files = []
+                if os.path.exists(f"{fastq_base}.fastq"):
+                    fastq_files.append(f"{fastq_base}.fastq")
+                if os.path.exists(f"{fastq_base}_1.fastq"):
+                    fastq_files.append(f"{fastq_base}_1.fastq")
+                if os.path.exists(f"{fastq_base}_2.fastq"):
+                    fastq_files.append(f"{fastq_base}_2.fastq")
+                if not fastq_files:
+                    for f in os.listdir(OUT_DIR):
+                        if f.startswith(srr) and f.endswith(".fastq"):
+                            fastq_files.append(os.path.join(OUT_DIR, f))
+                if not fastq_files:
+                    log_.err(f"No FASTQ files found for compression for {srr}")
+                    return False
+
+                compress_ok = True
+                for fq in fastq_files:
+                    if not compress_fastq_file(fq, compression_level, keep_fastq):
+                        compress_ok = False
+                        break
+                if not compress_ok:
+                    log_.err(f"Compression failed for some files of {srr}")
                     return False
                 if lock:
                     with lock:
-                        update_state(state, srr, 'converted', True)
-                        save_state(state_file, state)
-                else:
-                    update_state(state, srr, 'converted', True)
-                    save_state(state_file, state)
-
-                compression_done = get_state(state, srr, 'compressed', False)
-                if not compression_done:
-                    fastq_files = []
-                    if os.path.exists(f"{fastq_base}.fastq"):
-                        fastq_files.append(f"{fastq_base}.fastq")
-                    if os.path.exists(f"{fastq_base}_1.fastq"):
-                        fastq_files.append(f"{fastq_base}_1.fastq")
-                    if os.path.exists(f"{fastq_base}_2.fastq"):
-                        fastq_files.append(f"{fastq_base}_2.fastq")
-                    if not fastq_files:
-                        for f in os.listdir(OUT_DIR):
-                            if f.startswith(srr) and f.endswith(".fastq"):
-                                fastq_files.append(os.path.join(OUT_DIR, f))
-                    if not fastq_files:
-                        log_.err(f"No FASTQ files found for compression for {srr}")
-                        return False
-
-                    compress_ok = True
-                    for fq in fastq_files:
-                        if not compress_fastq_file(fq, compression_level, keep_fastq):
-                            compress_ok = False
-                            break
-                    if not compress_ok:
-                        log_.err(f"Compression failed for some files of {srr}")
-                        return False
-                    if lock:
-                        with lock:
-                            update_state(state, srr, 'compressed', True)
-                            save_state(state_file, state)
-                    else:
                         update_state(state, srr, 'compressed', True)
                         save_state(state_file, state)
-        else:
-            log_.info(f"Conversion already done for {srr} (from state).")
+                else:
+                    update_state(state, srr, 'compressed', True)
+                    save_state(state_file, state)
+    else:
+        log_.info(f"Conversion already done for {srr} (from state).")
 
-        if remove_sra:
-            if compression_level is None or get_state(state, srr, 'compressed', False):
-                try:
-                    if os.path.isfile(actual_sra_path):
-                        os.remove(actual_sra_path)
-                        log_.info(f"Removed {actual_sra_path}")
-                    elif os.path.isdir(sra_dir):
-                        shutil.rmtree(sra_dir)
-                        log_.info(f"Removed directory {sra_dir}")
-                except Exception as e:
-                    log_.warn(f"Failed to remove .sra for {srr}: {e}")
+    if compression_level is None or get_state(state, srr, 'compressed', False):
+        try:
+            if os.path.isfile(actual_sra_path):
+                os.remove(actual_sra_path)
+                log_.info(f"Removed {actual_sra_path}")
+            elif os.path.isdir(sra_dir):
+                shutil.rmtree(sra_dir)
+                log_.info(f"Removed directory {sra_dir}")
+        except Exception as e:
+            log_.warn(f"Failed to remove .sra for {srr}: {e}")
 
     return True
 
