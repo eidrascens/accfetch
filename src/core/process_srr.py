@@ -1,7 +1,10 @@
 from pathlib import Path
-from src.utils.log.logger import Logger
-
+from shutil import rmtree
+from os.path import exists, join, dirname, isdir
+from os import makedirs, listdir, remove, walk
 from typing import Any, Optional
+
+from src.utils.log.logger import Logger
 
 
 def process_single_srr(
@@ -16,19 +19,19 @@ def process_single_srr(
     Full pipeline for one SRR: (optional) prefetch -> (optional) fasterq-dump ->
     (optional) compress -> cleanup. Uses state file to skip completed steps.
     """
-    sra_file = os.path.join(OUT_DIR, f"{srr}.sra")
-    sra_dir = os.path.join(OUT_DIR, srr)
-    fastq_base = os.path.join(OUT_DIR, srr)
-    log_file = os.path.join(OUT_DIR, "logs", f"{srr}.log")
+    sra_file = join(OUT_DIR, f"{srr}.sra")
+    sra_dir = join(OUT_DIR, srr)
+    fastq_base = join(OUT_DIR, srr)
+    log_file = join(OUT_DIR, "logs", f"{srr}.log")
 
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    makedirs(dirname(log_file), exist_ok=True)
 
     if skip_existing and run_fastq:
         existing_fastq = (
-            os.path.exists(f"{fastq_base}.fastq") or
-            os.path.exists(f"{fastq_base}_1.fastq") or
-            os.path.exists(f"{fastq_base}.fastq.gz") or
-            os.path.exists(f"{fastq_base}_1.fastq.gz")
+            exists(f"{fastq_base}.fastq") or
+            exists(f"{fastq_base}_1.fastq") or
+            exists(f"{fastq_base}.fastq.gz") or
+            exists(f"{fastq_base}_1.fastq.gz")
         )
         if existing_fastq:
             log_.info(f"Skipping {srr}: FASTQ output already exists.")
@@ -55,13 +58,13 @@ def process_single_srr(
 
     # Locate actual sra path
     actual_sra_path = None
-    if os.path.exists(sra_file):
+    if exists(sra_file):
         actual_sra_path = sra_file
-    elif os.path.isdir(sra_dir):
-        for root, dirs, files in os.walk(sra_dir):
+    elif isdir(sra_dir):
+        for root, dirs, files in walk(sra_dir):
             for f in files:
                 if f.endswith(".sra"):
-                    actual_sra_path = os.path.join(root, f)
+                    actual_sra_path = join(root, f)
                     break
         if not actual_sra_path:
             log_.err(f"Could not find .sra file in directory {sra_dir} for {srr}")
@@ -110,16 +113,16 @@ def process_single_srr(
             compression_done = get_state(state, srr, 'compressed', False)
             if not compression_done:
                 fastq_files = []
-                if os.path.exists(f"{fastq_base}.fastq"):
+                if exists(f"{fastq_base}.fastq"):
                     fastq_files.append(f"{fastq_base}.fastq")
-                if os.path.exists(f"{fastq_base}_1.fastq"):
+                if exists(f"{fastq_base}_1.fastq"):
                     fastq_files.append(f"{fastq_base}_1.fastq")
-                if os.path.exists(f"{fastq_base}_2.fastq"):
+                if exists(f"{fastq_base}_2.fastq"):
                     fastq_files.append(f"{fastq_base}_2.fastq")
                 if not fastq_files:
-                    for f in os.listdir(OUT_DIR):
+                    for f in listdir(OUT_DIR):
                         if f.startswith(srr) and f.endswith(".fastq"):
-                            fastq_files.append(os.path.join(OUT_DIR, f))
+                            fastq_files.append(join(OUT_DIR, f))
                 if not fastq_files:
                     log_.err(f"No FASTQ files found for compression for {srr}")
                     return False
@@ -144,11 +147,11 @@ def process_single_srr(
 
     if compression_level is None or get_state(state, srr, 'compressed', False):
         try:
-            if os.path.isfile(actual_sra_path):
-                os.remove(actual_sra_path)
+            if isfile(actual_sra_path):
+                remove(actual_sra_path)
                 log_.info(f"Removed {actual_sra_path}")
-            elif os.path.isdir(sra_dir):
-                shutil.rmtree(sra_dir)
+            elif isdir(sra_dir):
+                rmtree(sra_dir)
                 log_.info(f"Removed directory {sra_dir}")
         except Exception as e:
             log_.warn(f"Failed to remove .sra for {srr}: {e}")
