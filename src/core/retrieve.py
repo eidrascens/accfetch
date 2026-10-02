@@ -1,4 +1,4 @@
-from os.path import isdir, join, exists
+from os.path import join, exists
 from tomllib import load
 
 from pathlib import Path
@@ -6,7 +6,6 @@ from typing import Self
 
 from src.utils.log.logger import Logger
 from src.utils.housekeeping import fix_dir
-from src.utils.system_req import check_disk_space
 
 
 class Retrieve:
