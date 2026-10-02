@@ -42,6 +42,8 @@ class State:
                 encoding="utf-8"
             ) as file_:
             dump(self.state, file_, indent=4)
+        #! replace shadows replace function for string
+        #! check what function this should be
         replace(tmp_file, self.STATE_FILE)
 
 
