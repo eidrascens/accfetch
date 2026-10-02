@@ -5,12 +5,16 @@ from os import makedirs, listdir, remove, walk
 from typing import Any, Optional
 
 from src.utils.log.logger import Logger
+from src.commands.run_cmd import RunCMD
 
 
 def process_single_srr(
     log_: Logger,
     srr: str,
     OUT_DIR: Path,
+    conda_env: Path,
+    max_size: int,
+    TMP_DIR: Path,
     state: dict[str, Any],
     state_file: str,
     lock: Optional[threading.Lock] = None,
@@ -19,6 +23,8 @@ def process_single_srr(
     Full pipeline for one SRR: (optional) prefetch -> (optional) fasterq-dump ->
     (optional) compress -> cleanup. Uses state file to skip completed steps.
     """
+    run_cmd: RunCMD = RunCMD(log_, OUT_DIR, conda_env)
+
     SRA_FILE: Path = OUT_DIR / f"{srr}.sra"
     SRA_DIR: Path = OUT_DIR / srr
     FASTQ_BASE: Path = OUT_DIR / srr
@@ -40,9 +46,9 @@ def process_single_srr(
     # 1. Prefetch (only if enabled)
     prefetch_done = get_state(state, srr, "prefetch", False)
     if not prefetch_done:
-        prefetch_ok = run_prefetch(
-            srr, OUT_DIR, max_size, temp_dir, SRA_LOG_FILE
-        )
+        prefetch_ok = run_cmd.run_prefetch(
+                srr, max_size, SRA_LOG_FILE
+            )
         if not prefetch_ok:
             log_.err(f"Prefetch failed for {srr}, skipping conversion.")
             return False
@@ -68,10 +74,12 @@ def process_single_srr(
     conversion_done = get_state(state, srr, "converted", False)
     if not conversion_done:
         if compression_level is None:
-            conv_ok = run_fasterq_dump(
-                srr, actual_sra_path, OUT_DIR,,
-                fasterq_dump_path, SRA_LOG_FILE
-            )
+            conv_ok = run_cmd.run_fasterq_dump(
+                    srr,
+                    SRA_FILE,
+                    TMP_DIR,
+                    SRA_LOG_FILE
+                )
             if not conv_ok:
                 log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                 return False
@@ -87,10 +95,12 @@ def process_single_srr(
                     update_state(state, srr, "compressed", True)
                 save_state(state_file, state)
         else:
-            conv_ok = run_fasterq_dump(
-                srr, actual_sra_path, OUT_DIR, threads,
-                fasterq_dump_path, conda_env, SRA_LOG_FILE
-            )
+            conv_ok = run_cmd.run_fasterq_dump(
+                    srr,
+                    SRA_FILE,
+                    TMP_DIR,
+                    SRA_LOG_FILE
+                )
             if not conv_ok:
                 log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                 return False
