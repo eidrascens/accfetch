@@ -9,27 +9,27 @@ from src.utils.housekeeping import remove_file
 
 def compress_fastq_file(
         log_: Logger,
-        fastq_path: Path,
+        FASTQ_FILE: Path,
         compression_level: int,
     ) -> bool:
     """Compress a single FASTQ file using gzip with specified level."""
 
     out_dir: Path = Path(
             dirname( # get the directory of fastq file
-                realpath(fastq_path)
+                realpath(FASTQ_FILE)
             )
         )
-    gz_path: Path = Path(out_dir / f"{fastq_path}.gz")
+    COMP_FASTQ_FILE: Path = Path(out_dir / f"{FASTQ_FILE}.gz")
     log_.info(
         "Compressing %s -> %s (level: %d)" % (
-            fastq_path, gz_path, compression_level
+            FASTQ_FILE, COMP_FASTQ_FILE, compression_level
         )
     )
     try:
         with open(
-                fastq_path, "rb"
+                FASTQ_FILE, "rb"
             ) as f_in, open(
-                gz_path, "wb"
+                COMP_FASTQ_FILE, "wb"
             ) as f_out:
             with gzip_module.GzipFile(
                 filename="",
@@ -38,22 +38,22 @@ def compress_fastq_file(
                 fileobj=f_out
             ) as gz_out:
                 copyfileobj(f_in, gz_out)
-        remove_file(log_, fastq_path)
+        remove_file(log_, FASTQ_FILE)
     except Exception as err_:
         log_.err(
-            "Cannot compress %s" % ( fastq_path ), err_
+            "Cannot compress %s" % ( FASTQ_FILE ), err_
         )
     else:
         return True
 
-    remove_file(log_, gz_path)
+    remove_file(log_, COMP_FASTQ_FILE)
     return False
 
 
 
 def _compress_fastq(
         log_: Logger,
-        fastq_path: Path,
+        FASTQ_FILE: Path,
         pigz_path: Path,
         level: int = 6,
         keep_original: bool =False,
@@ -64,7 +64,7 @@ def _compress_fastq(
     Prefers `pigz` (parallel) if available; falls back to Python's gzip.
     """
 
-    gz_path = fastq_path.with_suffix(fastq_path.suffix + ".gz")
+    COMP_FASTQ_FILE = FASTQ_FILE.with_suffix(FASTQ_FILE.suffix + ".gz")
 
     try:
         # pigz: -N = level, -p = threads, -k = keep original, -f = force overwrite
@@ -76,7 +76,7 @@ def _compress_fastq(
                 "-p",
                 f"{threads}",
                 "-k" if keep_original else "-f",
-                f"{fastq_path}"
+                f"{FASTQ_FILE}"
             ]
         run(cmd, check=True)
     except RuntimeError as err_:
@@ -85,13 +85,13 @@ def _compress_fastq(
         )
 
         with open(
-                fastq_path, "rb"
+                FASTQ_FILE, "rb"
             ) as f_in, gzip.open(
-                gz_path, "wb", compresslevel=level
+                COMP_FASTQ_FILE, "wb", compresslevel=level
             ) as f_out:
             copyfileobj(f_in, f_out)
 
         if not keep_original:
-            fastq_path.unlink()
+            FASTQ_FILE.unlink()
 
-    return gz_path
+    return COMP_FASTQ_FILE

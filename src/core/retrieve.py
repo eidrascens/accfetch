@@ -70,7 +70,7 @@ class Retrieve:
             original_count = len(srr_list)
             filtered = []
             for srr in srr_list:
-                fastq_base = join(output_dir, srr)
+                fastq_base = join(OUT_DIR, srr)
                 if exists(f"{fastq_base}.fastq") or \
                 exists(f"{fastq_base}_1.fastq") or \
                 exists(f"{fastq_base}.fastq.gz") or \
@@ -104,5 +104,5 @@ class Retrieve:
                     raise SystemExit
             except KeyboardInterrupt:
                 log_.warn("Interrupted by user. State saved for resume.")
-                save_state(state_file, state)
+                save_state(STATE_FILE, state)
                 raise SystemExit

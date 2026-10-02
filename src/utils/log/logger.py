@@ -12,7 +12,7 @@ from src.utils.get_dates import cdate, sdate
 class Logger:
     """ Custom logger. """
 
-    def __init__(self, log_filepath: Path, filename: str) -> None:
+    def __init__(self, LOG_FILE: Path, filename: str) -> None:
         logging.basicConfig(
             format="%(message)s",
             level=logging.INFO,
@@ -25,8 +25,8 @@ class Logger:
                 ]
         )
         self.log: logging.Logger = logging.getLogger("rich")
-        self.log_filepath: Path = log_filepath
-        self.log_filename: str = "%s-%s-%s.log" % (
+        self.LOG_FILE: Path = LOG_FILE
+        self.log_file_name: str = "%s-%s-%s.log" % (
                 filename,
                 sdate(no_spaces=True),
                 "".join(
@@ -35,7 +35,7 @@ class Logger:
                     )
                 )
             )
-        self.log_file: Path = self.log_filepath / self.log_filename
+        self.log_file: Path = self.LOG_FILE / self.log_file_name
 
         file_log: logging.FileHandler = logging.FileHandler(
                 filename=self.log_file

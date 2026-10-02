@@ -8,8 +8,8 @@ from src.utils.log.logger import Logger
 
 
 class BuildCmd:
-    def __init__(self: Self, out_dir: Path, conda_env: str) -> None:
-        self.out_dir: Path = out_dir
+    def __init__(self: Self, OUT_DIR: Path, conda_env: str) -> None:
+        self.OUT_DIR: Path = OUT_DIR
         self.conda_env: str = conda_env
 
     def build_prefetch_cmd(
@@ -26,26 +26,26 @@ class BuildCmd:
                 "prefetch",
                 srr,
                 "-O",
-                self.out_dir,
+                self.OUT_DIR,
                 "--max-size",
                 max_size
             ]
 
     def build_fasterq_dump_cmd(
             self: Self,
-            sra_file: Path,
-            tmp_dir: Path
+            SRA_FILE: Path,
+            TMP_DIR: Path
         ) -> list[str | Path]:
         """Build the command for fasterq-dump."""
         return [
                 "fasterq-dump",
-                sra_file,
+                SRA_FILE,
                 "-O",
-                self.out_dir,
+                self.OUT_DIR,
                 "--threads",
                 f"{cpu_count()}",
                 "-t",
-                tmp_dir
+                TMP_DIR
             ]
 
 
@@ -69,11 +69,11 @@ class BuildCmd:
 
 def process_srr_list(
         log_: Logger,
-        out_dir: Path,
+        OUT_DIR: Path,
         skip_existing: bool,
         srr_list,
         state,
-        state_file
+        STATE_FILE
     ):
     """
     Process a list of SRRs: download, convert, clean up.
@@ -85,13 +85,13 @@ def process_srr_list(
 
     for srr in srr_list:
         # Check if SRR already processed
-        if skip_existing and is_downloaded(srr, out_dir):
+        if skip_existing and is_downloaded(srr, OUT_DIR):
             log_.info("[%s] already exists" % ( srr ))
             continue
 
         log_.info("[%s] Processing ..." % ( srr ))
 
-        sra_file = out_dir / f"{srr}.sra"
+        SRA_FILE = OUT_DIR / f"{srr}.sra"
 
         # 1. Prefetch (download .sra)
         if args.prefetch:
@@ -99,7 +99,7 @@ def process_srr_list(
             prefetch_cmd: list[str | Path] = build_prefetch_cmd(
                     prefetch_path=args.prefetch_path,
                     srr=srr,
-                    out_dir=out_dir,
+                    OUT_DIR=OUT_DIR,
                     max_size=getattr(args, 'max_size', None),
                     extra_args=getattr(args, 'prefetch_extra', None),
                     conda_env=getattr(args, 'conda_env', None)
@@ -119,11 +119,11 @@ def process_srr_list(
                 continue
 
             # Move .sra from subdirectory if it was created
-            sra_subdir: Path = out_dir / srr
+            sra_subdir: Path = OUT_DIR / srr
             if sra_subdir.is_dir():
                 sra_file_sub: Path = sra_subdir / f"{srr}.sra"
                 if not sra_file_sub.exists():
-                    sra_file_sub.rename(sra_file)
+                    sra_file_sub.rename(SRA_FILE)
                     print(f"[{srr}] Moved .sra from subdirectory to main output")
                 else:
                     print(f"[{srr}] [WARN] .sra file not found in subdirectory")
@@ -136,25 +136,25 @@ def process_srr_list(
                     # Directory is not empty (has dependency files, cache, etc.)
                     pass
             else:
-                # If subdirectory doesn't exist, maybe .sra is already in out_dir
-                if not sra_file.exists():
+                # If subdirectory doesn't exist, maybe .sra is already in OUT_DIR
+                if not SRA_FILE.exists():
                     print(f"[{srr}] [WARN] .sra file not found in expected location")
 
         # 2. fasterq-dump (convert to FASTQ)
         if args.fasterq_dump:
-            if not sra_file.exists():
+            if not SRA_FILE.exists():
                 print(f"[{srr}] [WARN] .sra file not found, skipping conversion")
                 fail += 1
                 continue
 
             fq_cmd = build_fasterq_dump_cmd(
-                sra_file=str(sra_file),
-                out_dir=str(out_dir),
+                SRA_FILE=str(SRA_FILE),
+                OUT_DIR=str(OUT_DIR),
                 threads=args.threads,
                 fasterq_dump_path=args.fasterq_dump_path,
                 conda_env=getattr(args, 'conda_env', None),
                 extra_args=getattr(args, 'fasterq_extra', None),
-                tmp_dir=getattr(args, 'tmp_dir', None)
+                TMP_DIR=getattr(args, 'TMP_DIR', None)
             )
             print(f"[{srr}] Running: {' '.join(str(c) for c in fq_cmd)}")
             result = subprocess.run(fq_cmd)
@@ -170,8 +170,8 @@ def process_srr_list(
             keep_fastq = getattr(args, "keep_fastq", False)
 
             # Match both single-end (SRR.fastq) and paired-end (SRR_1.fastq, SRR_2.fastq)
-            candidates = [out_dir / f"{srr}.fastq"]
-            candidates.extend(out_dir.glob(f"{srr}_*.fastq"))
+            candidates = [OUT_DIR / f"{srr}.fastq"]
+            candidates.extend(OUT_DIR.glob(f"{srr}_*.fastq"))
             fastq_files = [f for f in candidates if f.exists()]
 
             if not fastq_files:
@@ -196,10 +196,10 @@ def process_srr_list(
                     continue
 
         # 3. Remove .sra if requested
-        if args.remove_sra and sra_file.exists():
+        if args.remove_sra and SRA_FILE.exists():
             try:
-                sra_file.unlink()
-                print(f"[{srr}] [REMOVE] {sra_file}")
+                SRA_FILE.unlink()
+                print(f"[{srr}] [REMOVE] {SRA_FILE}")
             except Exception as e:
                 print(f"[{srr}] [WARN] Failed to remove .sra: {e}")
 

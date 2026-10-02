@@ -10,11 +10,11 @@ class State:
     def __init__(
             self,
             log_: Logger,
-            state_file: Path,
+            STATE_FILE: Path,
             state: dict[str, Any]
         ) -> None:
         self.log_: Logger = log_
-        self.state_file: Path = state_file
+        self.STATE_FILE: Path = STATE_FILE
         self.state: dict[str, Any] = state
 
     def load_state(self) -> Dict[str, Any] | None:
@@ -22,22 +22,27 @@ class State:
 
         try:
             with open(
-                    self.state_file, "r", encoding="utf-8"
+                    self.STATE_FILE,
+                    "r",
+                    encoding="utf-8"
                 ) as file:
                 return load(file)
         except (FileNotFoundError) as _:
             self.log_.warn(
                 "Error reading %s, starting fresh." % (
-                    self.state_file
+                    self.STATE_FILE
                 )
             )
 
     def save_state(self) -> None:
         """Save state to JSON file atomically."""
-        tmp_file = f"{self.state_file}.tmp"
-        with open(tmp_file, "w", encoding="utf-8") as file:
-            dump(self.state, file, indent=4)
-        replace(tmp_file, self.state_file)
+        with open(
+                self.STATE_FILE,
+                "w",
+                encoding="utf-8"
+            ) as file_:
+            dump(self.state, file_, indent=4)
+        replace(tmp_file, self.STATE_FILE)
 
 
     def update_state(

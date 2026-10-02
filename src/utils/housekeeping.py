@@ -6,35 +6,35 @@ from subprocess import run
 from src.utils.log.logger import Logger
 
 
-def is_downloaded(srr: str, output_dir: Path) -> bool:
+def is_downloaded(srr: str, OUT_DIR: Path) -> bool:
     """Check if a .sra file or directory for the given SRR exists."""
     return exists(
-            output_dir / f"{srr}.sra"
+            OUT_DIR / f"{srr}.sra"
         ) or isdir(
-            output_dir / srr
+            OUT_DIR / srr
         ) or (
             exists(
-                output_dir / f"{srr}_1.fastq.gz"
+                OUT_DIR / f"{srr}_1.fastq.gz"
             ) and exists(
-                output_dir / f"{srr}_2.fastq.gz"
+                OUT_DIR / f"{srr}_2.fastq.gz"
             )
         ) or exists(
-            output_dir / f"{srr}.fastq.gz"
+            OUT_DIR / f"{srr}.fastq.gz"
         )
 
 
-def remove_file(log: Logger, file_path: Path) -> None:
+def remove_file(log: Logger, FILE_PATH: Path) -> None:
     try:
-        remove(file_path)
+        remove(FILE_PATH)
     except FileNotFoundError as _:
-        log.info("%s does not exist." % ( file_path ))
+        log.info("%s does not exist." % ( FILE_PATH ))
     except (
         OSError,
         PermissionError,
         SystemError
     ) as err_:
         log.err_(
-            "Cannot remove %s" % ( file_path ), err_
+            "Cannot remove %s" % ( FILE_PATH ), err_
         )
 
 
@@ -100,19 +100,19 @@ def fetch_srr_list(accession):
         raise RuntimeError from err_
 
 
-def check_dir(log_: Logger, path_arr: list[Path]) -> list[Path]:
+def check_dir(log_: Logger, PATH_ARR: list[Path]) -> list[Path]:
     """_summary_
 
     Args:
-        path_arr (list[Path]): String list of DIR to check.
+        PATH_ARR (list[Path]): String list of DIR to check.
         log_ (Logger): Logger() instance.
 
     Returns:
         list[Path] | None: String list of missing dir.
     """
 
-    missing_path: list[Path] = []
-    for dir_ in path_arr:
+    MISSING_PATHS: list[Path] = []
+    for dir_ in PATH_ARR:
         if isdir(dir_):
             log_.info(
                 "Skipping: %s, path exists ..." % ( dir_ )
@@ -121,25 +121,25 @@ def check_dir(log_: Logger, path_arr: list[Path]) -> list[Path]:
         log_.info(
             "%s is missing, include to the list ..." % ( dir_ )
         )
-        missing_path.append(Path(dir_))
+        MISSING_PATHS.append(Path(dir_))
 
-    return missing_path
+    return MISSING_PATHS
 
 
-def fix_dir(log_: Logger, path_arr: list[Path]) -> None:
+def fix_dir(log_: Logger, PATH_ARR: list[Path]) -> None:
     """Create the missing directories returned by check_dir().
 
     Args:
-        path_arr (list[str]): String list of DIR to create.
+        PATH_ARR (list[str]): String list of DIR to create.
         log_ (Logger): Logger() instance.
     """
 
-    missing_path: list[Path] = check_dir(log_, path_arr)
-    if not missing_path:
+    MISSING_PATHS: list[Path] = check_dir(log_, PATH_ARR)
+    if not MISSING_PATHS:
         return None
 
-    created_dir: list[Path] = []
-    for dir_ in missing_path:
+    created_dir_: list[Path] = []
+    for dir_ in MISSING_PATHS:
         try:
             log_.info(
                 "Trying to create dir: %s" % ( dir_ )
@@ -150,14 +150,14 @@ def fix_dir(log_: Logger, path_arr: list[Path]) -> None:
                 "Cannot create DIR: %s" % ( dir_ ), err_
             )
         else:
-            created_dir.append(Path(dir_))
+            created_dir_.append(Path(dir_))
 
-    failed_dir: list[Path] = list(
-            set(missing_path) ^ set(created_dir)
+    failed_dir_: list[Path] = list(
+            set(MISSING_PATHS) ^ set(created_dir_)
         )
-    if failed_dir:
+    if failed_dir_:
         log_.info(
             "Unable to create the ff. DIR: %s." % (
-                failed_dir
+                failed_dir_
             )
         )

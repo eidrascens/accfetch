@@ -4,11 +4,11 @@ from pathlib import Path
 from src.utils.log.logger import Logger
 
 
-def submit_array_job(log_: Logger, script_path: Path):
+def submit_array_job(log_: Logger, SCRIPT_PATH: Path):
     """Submit the SLURM job."""
     try:
         result = run(
-                ["sbatch", script_path],
+                ["sbatch", SCRIPT_PATH],
                 capture_output=True,
                 text=True,
                 check=False
