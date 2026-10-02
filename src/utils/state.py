@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Self
 from json import dump, load
 from os import replace
 
@@ -8,7 +8,7 @@ from src.utils.log.logger import Logger
 
 class State:
     def __init__(
-            self,
+            self: Self,
             log_: Logger,
             STATE_FILE: Path,
             state: dict[str, Any]
@@ -17,7 +17,7 @@ class State:
         self.STATE_FILE: Path = STATE_FILE
         self.state: dict[str, Any] = state
 
-    def load_state(self) -> Dict[str, Any] | None:
+    def load_state(self: Self) -> Dict[str, Any] | None:
         """Load state from JSON file."""
 
         try:
@@ -27,14 +27,15 @@ class State:
                     encoding="utf-8"
                 ) as file:
                 return load(file)
-        except (FileNotFoundError) as _:
+        except (FileNotFoundError) as err_:
             self.log_.warn(
                 "Error reading %s, starting fresh." % (
                     self.STATE_FILE
-                )
+                ), err_
             )
 
     def save_state(self) -> None:
+    def save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
         with open(
                 self.STATE_FILE,
@@ -48,7 +49,7 @@ class State:
 
 
     def update_state(
-            self,
+            self: Self,
             srr: str,
             key: str,
             value: bool = True
@@ -60,7 +61,7 @@ class State:
 
 
     def get_state(
-            self,
+            self: Self,
             srr: str,
             key: str,
             default: bool = False

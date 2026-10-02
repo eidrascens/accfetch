@@ -2,7 +2,7 @@ import logging
 import random
 from string import ascii_letters, digits
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 from rich.logging import RichHandler
 
@@ -12,7 +12,7 @@ from src.utils.get_dates import cdate, sdate
 class Logger:
     """ Custom logger. """
 
-    def __init__(self, LOG_FILE: Path, filename: str) -> None:
+    def __init__(self: Self, LOG_FILE: Path, filename: str) -> None:
         logging.basicConfig(
             format="%(message)s",
             level=logging.INFO,
@@ -52,10 +52,10 @@ class Logger:
             )
         )
 
-    def get_log_file_path(self) -> Path:
+    def get_log_file_path(self: Self) -> Path:
         return self.log_file
 
-    def crit(self, msg_: str, exception_: Optional[Any] = None) -> None:
+    def crit(self: Self, msg_: str, exception_: Optional[Any] = None) -> None:
         """Critical errors.
 
         Args:
@@ -68,7 +68,7 @@ class Logger:
 
         self.log.critical("%s: %s", exception_, msg_)
 
-    def warn(self, msg_: str, exception_: Optional[Any] = None) -> None:
+    def warn(self: Self, msg_: str, exception_: Optional[Any] = None) -> None:
         """Warnings.
 
         Args:
@@ -82,7 +82,7 @@ class Logger:
         self.log.warning("%s: %s", exception_, msg_)
 
 
-    def err(self, msg_: str, exception_: Optional[Any] = None) -> None:
+    def err(self: Self, msg_: str, exception_: Optional[Any] = None) -> None:
         """Minor but tolerable errors.
 
         Args:
@@ -95,7 +95,7 @@ class Logger:
 
         self.log.error("%s: %s", exception_, msg_)
 
-    def info(self, msg_: str) -> None:
+    def info(self: Self, msg_: str) -> None:
         """Likely important information.
 
         Args:

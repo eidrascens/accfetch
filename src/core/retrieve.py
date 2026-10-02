@@ -2,6 +2,7 @@ from os.path import isdir, join, exists
 from tomllib import load
 
 from pathlib import Path
+from typing import Self
 
 from src.utils.log.logger import Logger
 from src.utils.housekeeping import fix_dir
@@ -9,7 +10,7 @@ from src.utils.system_req import check_disk_space
 
 
 class Retrieve:
-    def __init__(self, log_: Logger, toml_conf: Path) -> None:
+    def __init__(self: Self, log_: Logger, toml_conf: Path) -> None:
         self.log_: Logger = log_
 
         with open(toml_conf, "rb", encoding="utf-8") as conf:
@@ -22,7 +23,7 @@ class Retrieve:
         self.fasterq_dump: Path = self.sra_toolkit / "prefetch"
         self.prefetch_path: Path = self.sra_toolkit / "fasterq-dump"
 
-    def retrieve(self) -> None:
+    def retrieve(self: Self) -> None:
 
 
         try:
