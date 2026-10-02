@@ -1,3 +1,4 @@
+from pathlib import Path
 from src.utils.log.logger import Logger
 
 from typing import Any, Optional
@@ -6,6 +7,7 @@ from typing import Any, Optional
 def process_single_srr(
     log_: Logger,
     srr: str,
+    OUT_DIR: Path,
     state: dict[str, Any],
     state_file: str,
     lock: Optional[threading.Lock] = None,
@@ -14,10 +16,11 @@ def process_single_srr(
     Full pipeline for one SRR: (optional) prefetch -> (optional) fasterq-dump ->
     (optional) compress -> cleanup. Uses state file to skip completed steps.
     """
-    sra_file = os.path.join(output_dir, f"{srr}.sra")
-    sra_dir = os.path.join(output_dir, srr)
-    fastq_base = os.path.join(output_dir, srr)
-    log_file = os.path.join(output_dir, "logs", f"{srr}.log")
+    sra_file = os.path.join(OUT_DIR, f"{srr}.sra")
+    sra_dir = os.path.join(OUT_DIR, srr)
+    fastq_base = os.path.join(OUT_DIR, srr)
+    log_file = os.path.join(OUT_DIR, "logs", f"{srr}.log")
+
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
     if skip_existing and run_fastq:
@@ -67,7 +70,7 @@ def process_single_srr(
             log_.error(f"Could not find .sra file in directory {sra_dir} for {srr}")
             return False
     else:
-        log_.error(f"No .sra file or directory found for {srr} in {output_dir}")
+        log_.error(f"No .sra file or directory found for {srr} in {OUT_DIR}")
         return False
 
     # 2. Conversion
@@ -95,7 +98,7 @@ def process_single_srr(
                     save_state(state_file, state)
             else:
                 conv_ok = run_fasterq_dump(
-                    srr, actual_sra_path, output_dir, threads,
+                    srr, actual_sra_path, OUT_DIR, threads,
                     fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
                 )
                 if not conv_ok:
@@ -119,9 +122,9 @@ def process_single_srr(
                     if os.path.exists(f"{fastq_base}_2.fastq"):
                         fastq_files.append(f"{fastq_base}_2.fastq")
                     if not fastq_files:
-                        for f in os.listdir(output_dir):
+                        for f in os.listdir(OUT_DIR):
                             if f.startswith(srr) and f.endswith(".fastq"):
-                                fastq_files.append(os.path.join(output_dir, f))
+                                fastq_files.append(os.path.join(OUT_DIR, f))
                     if not fastq_files:
                         log_.error(f"No FASTQ files found for compression for {srr}")
                         return False
@@ -162,7 +165,7 @@ def process_single_srr(
 def process_srr_list(
     log_: Logger,
     srr_list: list[str],
-    args,
+    OUT_DIR: Path,
     state: dict[str, Any],
     state_file: str,
 ) -> tuple[int, int]:
@@ -180,7 +183,9 @@ def process_srr_list(
             futures = {
                 executor.submit(
                     process_single_srr,
+                    log_,
                     srr,
+                    OUT_DIR,
                     state,
                     state_file,
                     lock,                   # pass the lock
@@ -198,7 +203,9 @@ def process_srr_list(
         # sequential mode, no lock needed
         for srr in srr_list:
             if process_single_srr(
+                log_,
                 srr,
+                OUT_DIR,
                 state,
                 state_file,
                 lock,  # lock is None here
