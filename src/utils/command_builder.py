@@ -1,66 +1,54 @@
-from os.path import exists
-import shutil
-import gzip
+from multiprocessing import cpu_count
 from subprocess import run
 from pathlib import Path
-from typing import Optional, Self
+from typing import Self
 
-from src.utils.housekeeping import remove_file, is_downloaded
+from src.utils.housekeeping import is_downloaded
 from src.utils.log.logger import Logger
 
 
 class BuildCmd:
-    def __init__(self: Self, out_dir: Path) -> None:
+    def __init__(self: Self, out_dir: Path, conda_env: str) -> None:
         self.out_dir: Path = out_dir
+        self.conda_env: str = conda_env
 
     def build_prefetch_cmd(
             self: Self,
             srr: str,
-            prefetch_path: Path,
-            max_size: Optional[int] = None,
-            conda_env: Optional[str] = None,
-        ) -> list[str | Path]:
+            max_size: int = 20
+        ) -> list[str | Path | int]:
         """Build the command list for running prefetch."""
-        BASE_PREFETCH_CMD: list[str | Path] = [
-                prefetch_path,
+        return [
+                "conda",
+                "run",
+                "-n",
+                self.conda_env,
+                "prefetch",
                 srr,
                 "-O",
-                self.out_dir
+                self.out_dir,
+                "--max-size",
+                max_size
             ]
-        cmd: list[str | Path] = BASE_PREFETCH_CMD
-        if conda_env:
-            cmd: list[str | Path]  = [
-                    "conda",
-                    "run",
-                    "-n",
-                    conda_env,
-                ].extend(BASE_PREFETCH_CMD)
-
-        return cmd.extend(
-                ["--max-size", max_size]
-            ) if max_size else cmd
-
 
     def build_fasterq_dump_cmd(
             self: Self,
             sra_file: Path,
-            fasterq_dump_path: Path,
-            threads: int,
-            tmp_dir: Optional[Path] = None,
+            tmp_dir: Path
         ) -> list[str | Path]:
         """Build the command for fasterq-dump."""
-        BASE_FD_CMD: list[str | Path] = [
-                fasterq_dump_path,
+        return [
+                "fasterq-dump",
                 sra_file,
                 "-O",
                 self.out_dir,
                 "--threads",
-                f"{threads}",
+                f"{cpu_count()}",
+                "-t",
+                tmp_dir
             ]
 
-        return BASE_FD_CMD.extend(
-                ["-t", tmp_dir]
-            ) if tmp_dir else BASE_FD_CMD
+
 
 
 # # ====== STUB FUNCTIONS (not used without --scheduler) ======
