@@ -1,11 +1,11 @@
+# Usage
+
 ## Quick Start
 
 ```bash
 # 1. Clone and activate
-git clone git@github.com:<user>/rice_rnaSeq_meta_analysis.git
+git clone https://github.com/eidrascens/rice_rnaSeq_meta_analysis
 cd rice_rnaSeq_meta_analysis
-git checkout devel
-conda activate sra_tools
 
 # 2. Configure paths
 export PROJECT_ROOT="/scratch1/$USER/rice_rnaSeq_meta_analysis"
