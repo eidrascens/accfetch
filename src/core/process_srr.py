@@ -19,19 +19,19 @@ def process_single_srr(
     Full pipeline for one SRR: (optional) prefetch -> (optional) fasterq-dump ->
     (optional) compress -> cleanup. Uses state file to skip completed steps.
     """
-    sra_file = join(OUT_DIR, f"{srr}.sra")
-    sra_dir = join(OUT_DIR, srr)
-    fastq_base = join(OUT_DIR, srr)
-    log_file = join(OUT_DIR, "logs", f"{srr}.log")
+    SRA_FILE: Path = OUT_DIR / f"{srr}.sra"
+    SRA_DIR: Path = OUT_DIR / srr
+    FASTQ_BASE: Path = OUT_DIR / srr
+    SRA_LOG_FILE: Path = OUT_DIR / ".logs" / f"{srr}.log"
 
-    makedirs(dirname(log_file), exist_ok=True)
+    makedirs(dirname(SRA_LOG_FILE), exist_ok=True)
 
     if skip_existing and run_fastq:
         existing_fastq = (
-            exists(f"{fastq_base}.fastq") or
-            exists(f"{fastq_base}_1.fastq") or
-            exists(f"{fastq_base}.fastq.gz") or
-            exists(f"{fastq_base}_1.fastq.gz")
+            exists(f"{FASTQ_BASE}.fastq") or
+            exists(f"{FASTQ_BASE}_1.fastq") or
+            exists(f"{FASTQ_BASE}.fastq.gz") or
+            exists(f"{FASTQ_BASE}_1.fastq.gz")
         )
         if existing_fastq:
             log_.info(f"Skipping {srr}: FASTQ output already exists.")
@@ -41,7 +41,7 @@ def process_single_srr(
     prefetch_done = get_state(state, srr, 'prefetch', False)
     if not prefetch_done:
         prefetch_ok = run_prefetch(
-            srr, OUT_DIR, max_size, temp_dir, log_file
+            srr, OUT_DIR, max_size, temp_dir, SRA_LOG_FILE
         )
         if not prefetch_ok:
             log_.err(f"Prefetch failed for {srr}, skipping conversion.")
@@ -58,16 +58,16 @@ def process_single_srr(
 
     # Locate actual sra path
     actual_sra_path = None
-    if exists(sra_file):
-        actual_sra_path = sra_file
-    elif isdir(sra_dir):
-        for root, dirs, files in walk(sra_dir):
+    if exists(SRA_FILE):
+        actual_sra_path = SRA_FILE
+    elif isdir(SRA_DIR):
+        for root, dirs, files in walk(SRA_DIR):
             for f in files:
                 if f.endswith(".sra"):
                     actual_sra_path = join(root, f)
                     break
         if not actual_sra_path:
-            log_.err(f"Could not find .sra file in directory {sra_dir} for {srr}")
+            log_.err(f"Could not find .sra file in directory {SRA_DIR} for {srr}")
             return False
     else:
         log_.err(f"No .sra file or directory found for {srr} in {OUT_DIR}")
@@ -78,7 +78,7 @@ def process_single_srr(
         if compression_level is None:
             conv_ok = run_fasterq_dump(
                 srr, actual_sra_path, OUT_DIR,,
-                fasterq_dump_path, log_file
+                fasterq_dump_path, SRA_LOG_FILE
             )
             if not conv_ok:
                 log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
@@ -97,7 +97,7 @@ def process_single_srr(
         else:
             conv_ok = run_fasterq_dump(
                 srr, actual_sra_path, OUT_DIR, threads,
-                fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
+                fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, SRA_LOG_FILE=SRA_LOG_FILE
             )
             if not conv_ok:
                 log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
@@ -113,12 +113,12 @@ def process_single_srr(
             compression_done = get_state(state, srr, 'compressed', False)
             if not compression_done:
                 fastq_files = []
-                if exists(f"{fastq_base}.fastq"):
-                    fastq_files.append(f"{fastq_base}.fastq")
-                if exists(f"{fastq_base}_1.fastq"):
-                    fastq_files.append(f"{fastq_base}_1.fastq")
-                if exists(f"{fastq_base}_2.fastq"):
-                    fastq_files.append(f"{fastq_base}_2.fastq")
+                if exists(f"{FASTQ_BASE}.fastq"):
+                    fastq_files.append(f"{FASTQ_BASE}.fastq")
+                if exists(f"{FASTQ_BASE}_1.fastq"):
+                    fastq_files.append(f"{FASTQ_BASE}_1.fastq")
+                if exists(f"{FASTQ_BASE}_2.fastq"):
+                    fastq_files.append(f"{FASTQ_BASE}_2.fastq")
                 if not fastq_files:
                     for f in listdir(OUT_DIR):
                         if f.startswith(srr) and f.endswith(".fastq"):
@@ -150,9 +150,9 @@ def process_single_srr(
             if isfile(actual_sra_path):
                 remove(actual_sra_path)
                 log_.info(f"Removed {actual_sra_path}")
-            elif isdir(sra_dir):
-                rmtree(sra_dir)
-                log_.info(f"Removed directory {sra_dir}")
+            elif isdir(SRA_DIR):
+                rmtree(SRA_DIR)
+                log_.info(f"Removed directory {SRA_DIR}")
         except Exception as e:
             log_.warn(f"Failed to remove .sra for {srr}: {e}")
 
