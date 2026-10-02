@@ -75,6 +75,8 @@ class RunCMD:
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f:
                 result = run(
+            if result.returncode != 0:
+                raise RuntimeError
         except (RuntimeError, CalledProcessError) as err_:
             self.log_.err(
                 "prefetch failed for %s (log: %s)" % (
