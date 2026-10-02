@@ -87,4 +87,7 @@ class RunCMD:
                     prefetch_cmd, CMD_LOG
                 ), err_
             )
-            return False
+        else:
+            return True
+
+        return False
