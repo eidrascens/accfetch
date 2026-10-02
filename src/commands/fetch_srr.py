@@ -27,6 +27,8 @@ def fetch_srr_list(log_: Logger, conf, accession: str) -> list[str]:
             )
         if not uid_list:
             raise RuntimeError(
+                f"No SRA records found for accession: {accession}"
+            )
         log_.info("Found %s SRA UIDs." % ( len(uid_list) ))
     except exceptions.RequestException as err_:
         raise RuntimeError(
@@ -60,7 +62,8 @@ def fetch_srr_list(log_: Logger, conf, accession: str) -> list[str]:
             break
     if run_col_index is None:
         raise RuntimeError(
-            f"Could not find 'Run' column in CSV header: {header}")
+            f"Could not find 'Run' column in CSV header: {header}"
+        )
 
     srr_list = []
     for line in lines[1:]:
@@ -73,7 +76,9 @@ def fetch_srr_list(log_: Logger, conf, accession: str) -> list[str]:
 
     srr_list = list(dict.fromkeys(srr_list))
     if not srr_list:
-        raise RuntimeError(f"No SRR runs found for accession: {accession}")
+        raise RuntimeError(
+            f"No SRR runs found for accession: {accession}"
+        )
 
     log_.info(f"Total SRR runs to process: {len(srr_list)}")
     return srr_list
