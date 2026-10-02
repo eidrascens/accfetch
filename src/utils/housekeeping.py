@@ -33,7 +33,7 @@ def remove_file(log: Logger, FILE_PATH: Path) -> None:
         PermissionError,
         SystemError
     ) as err_:
-        log.err_(
+        log.err(
             "Cannot remove %s" % ( FILE_PATH ), err_
         )
 
