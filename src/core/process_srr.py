@@ -196,23 +196,6 @@ def process_srr_list(
         for srr in srr_list:
             if process_single_srr(
                 srr,
-                args.output_dir,
-                args.max_size,
-                args.prefetch_extra,
-                args.prefetch_path,
-                args.conda_env,
-                args.temp_dir,
-                args.fasterq_dump,
-                args.fasterq_dump_path,
-                args.threads,
-                args.gzip,
-                args.compression_level,
-                args.keep_fastq,
-                args.fasterq_extra,
-                args.remove_sra,
-                args.skip_existing,
-                args.prefetch,
-                args.dry_run,
                 state,
                 state_file,
                 lock,  # lock is None here
