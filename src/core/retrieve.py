@@ -26,18 +26,14 @@ class Retrieve:
         if self.prog["ST_FILE"] is None:
             state_file: Path = self.prog["OUT_DIR"] / ".sra_state.json"
 
-        
+
         # Create output directory
         DIR: list[Path] = [
                 self.prog["OUT_DIR"],
                 self.prog["OUT_DIR"] / "logs"
             ]
-        fix_dir(log_, DIR)
-
-        if tmp_dir:
-            os.makedirs(tmp_dir, exist_ok=True)
-
-
+        fix_dir(self.log_, DIR)
+        os.makedirs(self.dir["tmp_dir"], exist_ok=True)
 
         # Fetch SRR list
         try:
@@ -91,3 +87,4 @@ class Retrieve:
                 log_.warn("Interrupted by user. State saved for resume.")
                 save_state(STATE_FILE, state)
                 raise SystemExit
+
