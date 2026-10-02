@@ -57,20 +57,12 @@ def process_single_srr(
         log_.info(f"Prefetch already done for {srr} (from state).")
 
     # Locate actual sra path
-    actual_sra_path = None
-    if exists(SRA_FILE):
-        actual_sra_path = SRA_FILE
-    elif isdir(SRA_DIR):
-        for root, dirs, files in walk(SRA_DIR):
-            for f in files:
-                if f.endswith(".sra"):
-                    actual_sra_path = join(root, f)
-                    break
-        if not actual_sra_path:
-            log_.err(f"Could not find .sra file in directory {SRA_DIR} for {srr}")
-            return False
-    else:
-        log_.err(f"No .sra file or directory found for {srr} in {OUT_DIR}")
+    if not exists(SRA_FILE):
+        log_.err(
+            "Downloaded SRA (%s) file missing in %s." % (
+                srr, SRA_FILE
+            )
+        )
         return False
 
     conversion_done = get_state(state, srr, "converted", False)
