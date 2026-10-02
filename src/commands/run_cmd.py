@@ -21,7 +21,10 @@ class RunCMD:
         TMP_DIR: Path,
         CMD_LOG: Path,
     ) -> bool:
-        """Run fasterq-dump on the .sra file, logging to a file. Returns True on success."""
+        """Run fasterq-dump on the .sra file, logging to a file.
+
+        Returns True on success.
+        """
         cmd = self.cmd.build_fasterq_dump_cmd(sra_path, TMP_DIR)
         self.log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
         try:
@@ -56,7 +59,10 @@ class RunCMD:
         max_size: Path,
         CMD_LOG: Path
     ) -> bool:
-        """Run prefetch for one SRR, logging to a file. Returns True on success."""
+        """Run prefetch for one SRR, logging to a file.
+
+        Returns True on success.
+        """
         cmd = self.cmd.build_prefetch_cmd(
                 srr, max_size
             )
