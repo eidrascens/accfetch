@@ -34,7 +34,8 @@ class State:
                 ), err_
             )
 
-    def save_state(self) -> None:
+        return None
+
     def save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
         with open(
