@@ -23,7 +23,7 @@ class RunCMD:
     ) -> bool:
         """Run fasterq-dump on the .sra file, logging to a file. Returns True on success."""
         cmd = self.cmd.build_fasterq_dump_cmd(sra_path, TMP_DIR)
-        log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
+        self.log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f:
                 result = run(
@@ -36,11 +36,11 @@ class RunCMD:
             if result.returncode != 0:
                 raise RuntimeError
 
-            log_.info(
+            self.log_.info(
                 "fasterq-dump succeeded for %s" % ( srr )
             )
         except Exception as err_:
-            log_.err(
+            self.log_.err(
                 "fasterq-dump failed for %s (log: %s)" % (
                     srr, CMD_LOG
                 ), err_
@@ -60,7 +60,7 @@ class RunCMD:
         cmd = self.cmd.build_prefetch_cmd(
                 srr, max_size
             )
-        log_.info(f"Running prefetch: {' '.join(cmd)}")
+        self.log_.info(f"Running prefetch: {' '.join(cmd)}")
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f:
                 result = run(
@@ -72,13 +72,13 @@ class RunCMD:
                     env=env,
                 )
             if result.returncode == 0:
-                log_.info(f"prefetch succeeded for {srr}")
+                self.log_.info(f"prefetch succeeded for {srr}")
                 return True
             else:
-                log_.err(f"prefetch failed for {srr}: see {CMD_LOG}")
+                self.log_.err(f"prefetch failed for {srr}: see {CMD_LOG}")
                 return False
         except Exception as err_:
-            log_.err(
+            self.log_.err(
                 "Exception during prefetch for %s" % (
                     srr
                 ), err_
