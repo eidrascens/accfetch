@@ -36,7 +36,7 @@ def process_single_srr(
         prefetch_done = get_state(state, srr, 'prefetch', False)
         if not prefetch_done:
             prefetch_ok = run_prefetch(
-                srr, output_dir, max_size, prefetch_extra, prefetch_path, conda_env, temp_dir, log_file
+                srr, OUT_DIR, max_size, temp_dir, log_file
             )
             if not prefetch_ok:
                 log_.error(f"Prefetch failed for {srr}, skipping conversion.")
@@ -76,8 +76,8 @@ def process_single_srr(
         if not conversion_done:
             if compression_level is None:
                 conv_ok = run_fasterq_dump(
-                    srr, actual_sra_path, output_dir, threads,
-                    fasterq_dump_path, conda_env, gzip, fasterq_extra, log_file
+                    srr, actual_sra_path, OUT_DIR,,
+                    fasterq_dump_path, log_file
                 )
                 if not conv_ok:
                     log_.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
