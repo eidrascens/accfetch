@@ -30,13 +30,13 @@ class RunCMD:
             )
         self.log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
         try:
-            with open(CMD_LOG, "a", encoding="utf-8") as log_f:
+            with open(CMD_LOG, "a", encoding="utf-8") as log_f_:
                 result = run(
-                        cmd,
-                        stdout=log_f,
+                        fasterq_dump_cmd,
+                        stdout=log_f_,
                         stderr=STDOUT,
                         text=True,
-                        check=False,
+                        check=False
                     )
             if result.returncode != 0:
                 raise RuntimeError
@@ -73,8 +73,16 @@ class RunCMD:
         """
         prefetch_cmd = self.cmd.build_prefetch_cmd(srr, max_size)
         try:
-            with open(CMD_LOG, "a", encoding="utf-8") as log_f:
+
+            with open(CMD_LOG, "a", encoding="utf-8") as log_f_:
                 result = run(
+                        prefetch_cmd,
+                        stdout=log_f_,
+                        stderr=STDOUT,
+                        stdin=DEVNULL,
+                        text=True,
+                        check=False
+                    )
             if result.returncode != 0:
                 raise RuntimeError
         except (RuntimeError, CalledProcessError) as err_:
