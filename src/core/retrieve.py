@@ -25,19 +25,6 @@ class Retrieve:
 
     def retrieve(self: Self) -> None:
 
-
-        try:
-            for cmd_path in [
-                    self.fasterq_dump,
-                    self.prefetch_path,
-                    self.sra_toolkit
-                ]:
-                if not isdir(cmd_path) or not exists(cmd_path):
-                    self.log_.err(f"{cmd_path} not found!")
-                    raise FileNotFoundError
-        except FileNotFoundError as err:
-            raise SystemExit from err
-        
         # Set state file path if not provided
         if self.prog["ST_FILE"] is None:
             state_file: Path = self.prog["OUT_DIR"] / ".sra_state.json"
