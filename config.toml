@@ -1,4 +1,4 @@
-[parameters]
+[SYSTEM]
 ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
@@ -22,14 +22,10 @@ PARTITION_QOS_MAP = {
     gpu_a100 = "gpu-a100_default",
 }
 
-[system]
-DEFAULT_MIN_DISK_GB = 20.0
-
-
-[program]
+[RUN]
+TMP_DIR = ""
 OUT_DIR = ""
-COMP_LVL =
+COMP_LVL = 6
 ST_FILE =
+MIN_SPACE = 20.0
 
-[commands]
-SRA_TOOLKIT = ""
