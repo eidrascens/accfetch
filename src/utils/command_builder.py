@@ -8,9 +8,9 @@ from src.utils.log.logger import Logger
 
 
 class BuildCmd:
-    def __init__(self: Self, OUT_DIR: Path, conda_env: str) -> None:
+    def __init__(self: Self, OUT_DIR: Path, conda_env: Path) -> None:
         self.OUT_DIR: Path = OUT_DIR
-        self.conda_env: str = conda_env
+        self.conda_env: Path = conda_env
 
     def build_prefetch_cmd(
             self: Self,
