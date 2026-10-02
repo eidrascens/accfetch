@@ -1,5 +1,5 @@
 from pathlib import Path
-from subprocess import run, STDOUT
+from subprocess import DEVNULL, CalledProcessError, run, STDOUT
 from typing import Self
 
 from src.utils.log.logger import Logger
@@ -68,7 +68,7 @@ class RunCMD:
     def run_prefetch(
         self: Self,
         srr: str,
-        max_size: Path,
+        max_size: int,
         CMD_LOG: Path
     ) -> bool:
         """Run prefetch for one SRR, logging to a file.
