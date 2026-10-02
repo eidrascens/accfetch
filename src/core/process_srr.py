@@ -128,9 +128,9 @@ def process_single_srr(
 
     if compression_level is None or get_state(state, srr, "compressed", False):
         try:
-            if isfile(actual_sra_path):
-                remove(actual_sra_path)
-                log_.info(f"Removed {actual_sra_path}")
+            if isfile(SRA_FILE):
+                remove(SRA_FILE)
+                log_.info(f"Removed {SRA_FILE}")
             elif isdir(SRA_DIR):
                 rmtree(SRA_DIR)
                 log_.info(f"Removed directory {SRA_DIR}")
