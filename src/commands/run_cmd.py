@@ -44,10 +44,16 @@ class RunCMD:
             self.log_.info(
                 "fasterq-dump succeeded for %s" % ( srr )
             )
-        except Exception as err_:
+        except (RuntimeError, CalledProcessError) as err_:
             self.log_.err(
                 "fasterq-dump failed for %s (log: %s)" % (
                     srr, CMD_LOG
+                ), err_
+            )
+        except Exception as err_:
+            self.log_.err(
+                "Error occured while executing %s (log: %s)" % (
+                    fasterq_dump_cmd, CMD_LOG
                 ), err_
             )
         else:
@@ -69,23 +75,16 @@ class RunCMD:
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f:
                 result = run(
-                    cmd,
-                    stdout=log_f,
-                    stderr=STDOUT,
-                    text=True,
-                    check=False,
-                    env=env,
-                )
-            if result.returncode == 0:
-                self.log_.info(f"prefetch succeeded for {srr}")
-                return True
-            else:
-                self.log_.err(f"prefetch failed for {srr}: see {CMD_LOG}")
-                return False
+        except (RuntimeError, CalledProcessError) as err_:
+            self.log_.err(
+                "prefetch failed for %s (log: %s)" % (
+                    srr, CMD_LOG
+                ), err_
+            )
         except Exception as err_:
             self.log_.err(
-                "Exception during prefetch for %s" % (
-                    srr
+                "Error occured while executing %s (log: %s)" % (
+                    prefetch_cmd, CMD_LOG
                 ), err_
             )
             return False
