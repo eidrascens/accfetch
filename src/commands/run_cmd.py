@@ -25,7 +25,9 @@ class RunCMD:
 
         Returns True on success.
         """
-        cmd = self.cmd.build_fasterq_dump_cmd(sra_path, TMP_DIR)
+        fasterq_dump_cmd = self.cmd.build_fasterq_dump_cmd(
+                sra_path, TMP_DIR
+            )
         self.log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f:
@@ -63,10 +65,7 @@ class RunCMD:
 
         Returns True on success.
         """
-        cmd = self.cmd.build_prefetch_cmd(
-                srr, max_size
-            )
-        self.log_.info(f"Running prefetch: {' '.join(cmd)}")
+        prefetch_cmd = self.cmd.build_prefetch_cmd(srr, max_size)
         try:
             with open(CMD_LOG, "a", encoding="utf-8") as log_f:
                 result = run(
