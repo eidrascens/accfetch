@@ -36,31 +36,12 @@ class Retrieve:
                     raise FileNotFoundError
         except FileNotFoundError as err:
             raise SystemExit from err
-
-        # Determine gzip flag
-        if self.prog["COMP_LVL"] is not None:
-            gzip = False
-        else:
-            gzip = fasterq_dump and not no_gzip
-
+        
         # Set state file path if not provided
         if self.prog["ST_FILE"] is None:
             state_file: Path = self.prog["OUT_DIR"] / ".sra_state.json"
 
-        # Validate
-        if prefetch_path and conda_env:
-            self.log_.err("Provide either --prefetch-path or --conda-env, not both.")
-            raise SystemExit
-        if fasterq_dump and not (prefetch_path or conda_env or fasterq_dump_path):
-            self.log_.err("For --fasterq-dump, you must provide --prefetch-path, --conda-env, --sra-toolkit-bin, or --fasterq-dump-path.")
-            raise SystemExit
-        if keep_fastq and compression_level is None:
-            self.log_.err("--keep-fastq requires --compression-level.")
-            raise SystemExit
-        if compression_level is not None and not fasterq_dump:
-            self.log_.err("--compression-level requires --fasterq-dump to be enabled.")
-            raise SystemExit
-
+        
         # Create output directory
         DIR: list[Path] = [
                 self.prog["OUT_DIR"],

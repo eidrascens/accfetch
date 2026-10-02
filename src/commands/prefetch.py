@@ -2,9 +2,10 @@ def run_prefetch(
     srr: str,
     output_dir: str,
     max_size: Optional[str],
-    extra_args: Optional[List[str]],
-    prefetch_path: Optional[str],
-    conda_env: Optional[str],
+
+
+
+
     temp_dir: Optional[str],
     log_file: str,
 ) -> bool:

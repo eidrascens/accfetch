@@ -10,10 +10,6 @@ def run_fasterq_dump(
     sra_path: Path,
     out_dir: str,
     threads: int,
-    fasterq_dump_path: Optional[Path],
-    conda_env: Optional[Path],
-    gzip: bool,
-    extra_args: Optional[List[str]],
     run_log_file: Path,
 ) -> bool:
     """Run fasterq-dump on the .sra file, logging to a file. Returns True on success."""
@@ -21,10 +17,6 @@ def run_fasterq_dump(
             sra_path,
             out_dir,
             threads,
-            fasterq_dump_path,
-            conda_env,
-            gzip,
-            extra_args
         )
     log_.info(f"Running fasterq-dump: {' '.join(cmd)}")
     try:
