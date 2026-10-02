@@ -38,7 +38,7 @@ def process_single_srr(
             return True
 
     # 1. Prefetch (only if enabled)
-    prefetch_done = get_state(state, srr, 'prefetch', False)
+    prefetch_done = get_state(state, srr, "prefetch", False)
     if not prefetch_done:
         prefetch_ok = run_prefetch(
             srr, OUT_DIR, max_size, temp_dir, SRA_LOG_FILE
@@ -48,10 +48,10 @@ def process_single_srr(
             return False
         if lock:
             with lock:
-                update_state(state, srr, 'prefetch', True)
+                update_state(state, srr, "prefetch", True)
                 save_state(state_file, state)
         else:
-            update_state(state, srr, 'prefetch', True)
+            update_state(state, srr, "prefetch", True)
             save_state(state_file, state)
     else:
         log_.info(f"Prefetch already done for {srr} (from state).")
@@ -73,7 +73,7 @@ def process_single_srr(
         log_.err(f"No .sra file or directory found for {srr} in {OUT_DIR}")
         return False
 
-    conversion_done = get_state(state, srr, 'converted', False)
+    conversion_done = get_state(state, srr, "converted", False)
     if not conversion_done:
         if compression_level is None:
             conv_ok = run_fasterq_dump(
@@ -85,32 +85,32 @@ def process_single_srr(
                 return False
             if lock:
                 with lock:
-                    update_state(state, srr, 'converted', True)
+                    update_state(state, srr, "converted", True)
                     if gzip:
-                        update_state(state, srr, 'compressed', True)
+                        update_state(state, srr, "compressed", True)
                     save_state(state_file, state)
             else:
-                update_state(state, srr, 'converted', True)
+                update_state(state, srr, "converted", True)
                 if gzip:
-                    update_state(state, srr, 'compressed', True)
+                    update_state(state, srr, "compressed", True)
                 save_state(state_file, state)
         else:
             conv_ok = run_fasterq_dump(
                 srr, actual_sra_path, OUT_DIR, threads,
-                fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, SRA_LOG_FILE=SRA_LOG_FILE
+                fasterq_dump_path, conda_env, SRA_LOG_FILE
             )
             if not conv_ok:
                 log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                 return False
             if lock:
                 with lock:
-                    update_state(state, srr, 'converted', True)
+                    update_state(state, srr, "converted", True)
                     save_state(state_file, state)
             else:
-                update_state(state, srr, 'converted', True)
+                update_state(state, srr, "converted", True)
                 save_state(state_file, state)
 
-            compression_done = get_state(state, srr, 'compressed', False)
+            compression_done = get_state(state, srr, "compressed", False)
             if not compression_done:
                 fastq_files = []
                 if exists(f"{FASTQ_BASE}.fastq"):
@@ -137,15 +137,15 @@ def process_single_srr(
                     return False
                 if lock:
                     with lock:
-                        update_state(state, srr, 'compressed', True)
+                        update_state(state, srr, "compressed", True)
                         save_state(state_file, state)
                 else:
-                    update_state(state, srr, 'compressed', True)
+                    update_state(state, srr, "compressed", True)
                     save_state(state_file, state)
     else:
         log_.info(f"Conversion already done for {srr} (from state).")
 
-    if compression_level is None or get_state(state, srr, 'compressed', False):
+    if compression_level is None or get_state(state, srr, "compressed", False):
         try:
             if isfile(actual_sra_path):
                 remove(actual_sra_path)
