@@ -17,11 +17,8 @@ class Retrieve:
             conf = load(conf)
 
         self.prog = conf["program"]
-        self.cmd = conf["commands"]
-
-        self.sra_toolkit: Path = Path(self.cmd["SRA_TOOLKIT"])
-        self.fasterq_dump: Path = self.sra_toolkit / "prefetch"
-        self.prefetch_path: Path = self.sra_toolkit / "fasterq-dump"
+        self.compression_lvl: int = 6
+        self.dir = conf["dir"]
 
     def retrieve(self: Self) -> None:
 
