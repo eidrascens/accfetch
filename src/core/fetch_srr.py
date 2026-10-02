@@ -15,7 +15,6 @@ def fetch_srr_list(
     )
 
     ESEARCH_URL = conf["SYSTEM"]["ESEARCH_URL"]
-    EFETCH_URL = conf["SYSTEM"]["EFETCH_URL"]
     ESEARCH_PARAMS = conf["SYSTEM"]["ESEARCH_PARAMS"]
     ESEARCH_PARAMS["term"] = f"{accession}[Accession]"
 
@@ -40,6 +39,8 @@ def fetch_srr_list(
                 f"ESearch request failed: {err_}"
             ) from err_
 
+    EFETCH_URL = conf["SYSTEM"]["EFETCH_URL"]
+    EFETCH_PARAMS = conf["SYSTEM"]["EFETCH_PARAMS"]
     EFETCH_PARAMS["id"] = ",".join(uid_list)
 
     try:
