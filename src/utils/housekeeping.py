@@ -1,7 +1,6 @@
 from pathlib import Path
 from os.path import exists, isdir
 from os import remove, mkdir
-from shutil import which
 from subprocess import run
 
 from src.utils.log.logger import Logger
@@ -37,16 +36,6 @@ def remove_file(log: Logger, file_path: Path) -> None:
         log.err_(
             "Cannot remove %s" % ( file_path ), err_
         )
-
-
-def check_tool_available(cmd):
-    """Check if a command is available in the system.
-
-    Returns True if the command exists, False otherwise.
-    """
-    if isinstance(cmd, list):
-        cmd = cmd[0]
-    return which(cmd) is not None
 
 
 def fetch_srr_list(accession):
