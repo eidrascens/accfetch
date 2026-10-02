@@ -1,9 +1,12 @@
 from src.utils.log.logger import Logger
 
+from typing import Any, Optional
+
+
 def process_single_srr(
     log_: Logger,
     srr: str,
-    state: Dict[str, Any],
+    state: dict[str, Any],
     state_file: str,
     lock: Optional[threading.Lock] = None,
 ) -> bool:
@@ -158,9 +161,9 @@ def process_single_srr(
 
 def process_srr_list(
     log_: Logger,
-    srr_list: List[str],
+    srr_list: list[str],
     args,
-    state: Dict[str, Any],
+    state: dict[str, Any],
     state_file: str,
 ) -> tuple[int, int]:
     """Process a list of SRRs using parallel jobs as specified."""
