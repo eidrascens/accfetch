@@ -42,7 +42,7 @@ def process_single_srr(
                 srr, OUT_DIR, max_size, temp_dir, log_file
             )
             if not prefetch_ok:
-                log_.error(f"Prefetch failed for {srr}, skipping conversion.")
+                log_.err(f"Prefetch failed for {srr}, skipping conversion.")
                 return False
             if lock:
                 with lock:
@@ -67,10 +67,10 @@ def process_single_srr(
                     actual_sra_path = os.path.join(root, f)
                     break
         if not actual_sra_path:
-            log_.error(f"Could not find .sra file in directory {sra_dir} for {srr}")
+            log_.err(f"Could not find .sra file in directory {sra_dir} for {srr}")
             return False
     else:
-        log_.error(f"No .sra file or directory found for {srr} in {OUT_DIR}")
+        log_.err(f"No .sra file or directory found for {srr} in {OUT_DIR}")
         return False
 
     # 2. Conversion
@@ -83,7 +83,7 @@ def process_single_srr(
                     fasterq_dump_path, log_file
                 )
                 if not conv_ok:
-                    log_.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                    log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                     return False
                 if lock:
                     with lock:
@@ -102,7 +102,7 @@ def process_single_srr(
                     fasterq_dump_path, conda_env, gzip=False, extra_args=fasterq_extra, log_file=log_file
                 )
                 if not conv_ok:
-                    log_.error(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+                    log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
                     return False
                 if lock:
                     with lock:
@@ -126,7 +126,7 @@ def process_single_srr(
                             if f.startswith(srr) and f.endswith(".fastq"):
                                 fastq_files.append(os.path.join(OUT_DIR, f))
                     if not fastq_files:
-                        log_.error(f"No FASTQ files found for compression for {srr}")
+                        log_.err(f"No FASTQ files found for compression for {srr}")
                         return False
 
                     compress_ok = True
@@ -135,7 +135,7 @@ def process_single_srr(
                             compress_ok = False
                             break
                     if not compress_ok:
-                        log_.error(f"Compression failed for some files of {srr}")
+                        log_.err(f"Compression failed for some files of {srr}")
                         return False
                     if lock:
                         with lock:
@@ -157,7 +157,7 @@ def process_single_srr(
                         shutil.rmtree(sra_dir)
                         log_.info(f"Removed directory {sra_dir}")
                 except Exception as e:
-                    log_.warning(f"Failed to remove .sra for {srr}: {e}")
+                    log_.warn(f"Failed to remove .sra for {srr}: {e}")
 
     return True
 
