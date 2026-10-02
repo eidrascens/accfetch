@@ -1,7 +1,7 @@
+import os
 from pathlib import Path
 from typing import Any, Dict, Self
 from json import dump, load
-from os import replace
 
 from src.utils.log.logger import Logger
 
@@ -38,15 +38,14 @@ class State:
 
     def save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
+        TMP_STATE_FILE: Path = Path(f"{self.STATE_FILE}.tmp")
         with open(
-                self.STATE_FILE,
+                TMP_STATE_FILE,
                 "w",
                 encoding="utf-8"
             ) as file_:
             dump(self.state, file_, indent=4)
-        #! replace shadows replace function for string
-        #! check what function this should be
-        replace(tmp_file, self.STATE_FILE)
+        os.replace(TMP_STATE_FILE, self.STATE_FILE)
 
 
     def update_state(
