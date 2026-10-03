@@ -87,7 +87,7 @@ def compress_fastq(
 
         with open(
                 FASTQ_FILE, "rb"
-            ) as f_in, gzip.open(
+            ) as f_in, gzip_module.open(
                 COMP_FASTQ_FILE, "wb", compresslevel=COMP_LVL
             ) as f_out:
             copyfileobj(f_in, f_out)
