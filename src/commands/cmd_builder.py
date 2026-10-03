@@ -1,12 +1,12 @@
 from multiprocessing import cpu_count
-from os import mkdir, scandir
+
 from pathlib import Path
 from subprocess import run
 from typing import Self
 
 from src.utils.log.custom_logger import Logger
 from src.utils.misc.housekeeping import is_downloaded
-from src.utils.misc.id_gen import id_gen
+
 
 
 class BuildCMD:
@@ -41,21 +41,7 @@ class BuildCMD:
         ) -> list[str | Path]:
         """Build the command for fasterq-dump."""
 
-        try:
-            if next(scandir(TMP_DIR), None):
-                mkdir(f"{TMP_DIR}-{id_gen()}")
-        except FileNotFoundError as _:
-            mkdir(TMP_DIR)
-        except (OSError, PermissionError) as err_:
-            self.log_.err(
-                sys_ext_msg_ := (
-                    "Error encountered while creating %s" % (
-                        TMP_DIR
-                    )
-                ), err_
-            )
-            raise SystemExit from Exception(sys_ext_msg_)
-
+        
         return [
                 "fasterq-dump",
                 SRA_FILE,
