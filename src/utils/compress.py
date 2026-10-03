@@ -51,7 +51,7 @@ def compress_fastq_file(
 
 
 
-def _compress_fastq(
+def compress_fastq(
         log_: Logger,
         FASTQ_FILE: Path,
         pigz_path: Path,
