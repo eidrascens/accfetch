@@ -7,8 +7,6 @@ def check_disk_space(
         log_: Logger, output_dir: str, min_gb: float
     ) -> bool:
     """Check available disk space in output_dir."""
-    if min_gb <= 0:
-        return True
 
     try:
         _, _, free = shutil.disk_usage(output_dir)
