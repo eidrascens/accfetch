@@ -1,3 +1,4 @@
+from multiprocessing import cpu_count
 import gzip as gzip_module
 from os.path import realpath, dirname, exists
 from pathlib import Path
@@ -75,7 +76,7 @@ def compress_fastq(
                 PIGZ_PATH,
                 f"-{COMP_LVL}",
                 "-p",
-                f"{threads}",
+                f"{cpu_count()}",
                 "-k" if keep_original else "-f",
                 f"{FASTQ_FILE}"
             ]
