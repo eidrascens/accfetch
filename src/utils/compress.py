@@ -12,8 +12,7 @@ from src.utils.housekeeping import remove_file
 def fallback_compression(
         log_: Logger,
         FASTQ_FILE: Path,
-        compression_level: int,
-    ) -> bool:
+    ) -> tuple[Path, bool]:
     """Compress a single FASTQ file using gzip with specified COMP_LVL."""
 
     out_dir: Path = Path(
@@ -46,20 +45,16 @@ def fallback_compression(
             "Cannot compress %s" % ( FASTQ_FILE ), err_
         )
     else:
-        return True
+        return COMP_FASTQ_FILE, True
 
-    remove_file(log_, COMP_FASTQ_FILE)
-    return False
+    return FASTQ_FILE, False
 
 
 def compression(
         log_: Logger,
         FASTQ_FILE: Path,
         PIGZ_PATH: Path,
-        COMP_LVL: int = 6,
-        keep_original: bool = False,
-        threads: int = 4
-    ):
+    ) -> tuple[Path, bool]:
     """
     Compress a single FASTQ file.
     Prefers `pigz` (parallel) if available; falls back to Python's gzip.
@@ -91,8 +86,11 @@ def compression(
                 COMP_FASTQ_FILE, "wb", compresslevel=COMP_LVL
             ) as f_out:
             copyfileobj(f_in, f_out)
+    else:
+        return COMP_FASTQ_FILE, True
 
-        if not keep_original:
-            FASTQ_FILE.unlink()
+    return FASTQ_FILE, False
 
-    return COMP_FASTQ_FILE
+
+
+
