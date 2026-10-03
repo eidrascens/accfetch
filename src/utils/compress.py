@@ -3,7 +3,7 @@ import gzip as gzip_module
 from os.path import realpath, dirname, exists
 from pathlib import Path
 from shutil import copyfileobj
-from subprocess import run
+from subprocess import CalledProcessError, run
 
 from src.utils.log.logger import Logger
 from src.utils.housekeeping import remove_file
@@ -17,7 +17,7 @@ def fallback_compression(
     ) -> tuple[Path, bool]:
     """Compress a single FASTQ file using gzip with specified COMP_LVL."""
 
-    
+
     try:
         with open(
                 FASTQ_FILE, "rb"
@@ -72,18 +72,11 @@ def compression(
         log_.warn(
             "Runtime error: falling back to Python Gzip", err_
         )
-
-        with open(
-                FASTQ_FILE, "rb"
-            ) as f_in, gzip_module.open(
-                COMP_FASTQ_FILE, "wb", compresslevel=COMP_LVL
-            ) as f_out:
-            copyfileobj(f_in, f_out)
+        fallback_compression(
+            log_, FASTQ_FILE, COMP_FASTQ_FILE, COMP_LVL
+        )
     else:
         return COMP_FASTQ_FILE, True
 
     return FASTQ_FILE, False
-
-
-
 
