@@ -58,12 +58,13 @@ class State:
         """Load state from JSON file."""
 
         try:
+            self.create_state_file()
             with open(
                     self.STATE_FILE,
                     "r",
                     encoding="utf-8"
-                ) as file:
-                return load(file)
+                ) as state_file_:
+                self.state = load(state_file_)
         except (FileNotFoundError, OSError) as err_:
             self.log_.warn(
                 "Error reading %s, starting fresh." % (
@@ -71,7 +72,7 @@ class State:
                 ), err_
             )
 
-        return None
+        return loads(f"{self.state}")
 
     def save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
