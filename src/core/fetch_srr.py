@@ -56,7 +56,7 @@ def fetch_srr_list(
         csv_text = response.text
     except exceptions.RequestException as err_:
         raise RuntimeError(
-                f"EFetch request failed: {e}"
+                f"EFetch request failed: {err_}"
             ) from err_
 
     lines = csv_text.strip().splitlines()
