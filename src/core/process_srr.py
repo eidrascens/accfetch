@@ -5,6 +5,7 @@ from os import makedirs, listdir, remove, walk
 from typing import Any, Optional
 
 from src.utils.log.logger import Logger
+from src.utils.compress import compression
 from src.commands.run_cmd import RunCMD
 
 
@@ -89,31 +90,28 @@ def process_single_srr(
         #     update_state(state, srr, "converted", True)
         #     save_state(state_file, state)
 
-        compression_done = get_state(state, srr, "compressed", False)
-        if not compression_done:
-            fastq_files = []
-            if exists(f"{FASTQ_BASE}.fastq"):
-                fastq_files.append(f"{FASTQ_BASE}.fastq")
-            if exists(f"{FASTQ_BASE}_1.fastq"):
-                fastq_files.append(f"{FASTQ_BASE}_1.fastq")
-            if exists(f"{FASTQ_BASE}_2.fastq"):
-                fastq_files.append(f"{FASTQ_BASE}_2.fastq")
-            if not fastq_files:
-                for f in listdir(OUT_DIR):
-                    if f.startswith(srr) and f.endswith(".fastq"):
-                        fastq_files.append(join(OUT_DIR, f))
-            if not fastq_files:
-                log_.err(f"No FASTQ files found for compression for {srr}")
-                return False
+    compression_done = state.get_state(srr, "compressed", False)
+    if not compression_done:
+        fastq_files = []
+        for f in listdir(OUT_DIR):
+            if f.startswith(srr) and f.endswith(".fastq"):
+                fastq_files.append(join(OUT_DIR, f))
 
-            compress_ok = True
-            for fq in fastq_files:
-                if not compress_fastq_file(fq, compression_level, keep_fastq):
-                    compress_ok = False
-                    break
-            if not compress_ok:
-                log_.err(f"Compression failed for some files of {srr}")
-                return False
+        if not fastq_files:
+            log_.err(f"No FASTQ files found for compression for {srr}")
+            return False
+
+        compressed_files: list[Path] = []
+        for fq in fastq_files:
+            comp_file, comp_stat = compression(log_, fq)
+            if comp_stat:
+                compressed_files.append(comp_file)
+
+        if not compressed_files:
+            log_.err(
+                "Compression failed for %s" % ( compressed_files )
+            )
+            return False
             # if lock:
             #     with lock:
             #         update_state(state, srr, "compressed", True)
