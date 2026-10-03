@@ -92,63 +92,63 @@ def fetch_srr_list(
     log_.info(f"Total SRR runs to process: {len(srr_list)}")
     return srr_list
 
-def fetch_srr_list(accession):
-    """
-    Fetch list of runs accessions for a given study or project.
-    Supports NCBI SRA (PRJNA/SRP/SRR), DDBJ (PRJDB/DRP/DRR),
-    and ENA (PRJEB/ERP/ERR) accessions.
-    """
-
-    if accession.startswith("PRJ"):
-        # Covers PRJNA (NCBI), PRJDB (DDBJ), PRJEB (ENA)
-        query = f"{accession}[BioProject]"
-    elif accession.startswith(("SRP", "DRP", "ERP")):
-        # SRA Study / DDBJ Study / ENA Study
-        query = f"{accession}[SRA Study]"
-    elif accession.startswith(("SRR", "DRR", "ERR")):
-        # Direct run accession — bypass list fetching entirely
-        return [accession]
-    else:
-        query = accession
-
-    try:
-        cmd: list[str] = [
-                "esearch",
-                "-db sra",
-                f"-query '{query}'",
-                "|",
-                "efetch",
-                "-format runinfo",
-                "|",
-                "cut",
-                "-d ','",
-                "-f1",
-                "|",
-                "tail",
-                "-n",
-                "+2"
-            ]
-        result = run(
-                cmd,
-                shell=True,
-                capture_output=True,
-                text=True
-            )
-
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"Failed to fetch SRR list for {accession}"
-            )
-
-        # Accept NCBI (SRR), DDBJ (DRR), and ENA (ERR) run prefixes
-        srr_list = [
-                line.strip()
-                for line in result.stdout.splitlines()
-                if line.strip().startswith(
-                    ("SRR", "DRR", "ERR")
-                )
-            ]
-        return srr_list
-
-    except (CalledProcessError, RuntimeError) as err_:
-        raise RuntimeError from err_
+# def fetch_srr_list(accession):
+#     """
+#     Fetch list of runs accessions for a given study or project.
+#     Supports NCBI SRA (PRJNA/SRP/SRR), DDBJ (PRJDB/DRP/DRR),
+#     and ENA (PRJEB/ERP/ERR) accessions.
+#     """
+#
+#     if accession.startswith("PRJ"):
+#         # Covers PRJNA (NCBI), PRJDB (DDBJ), PRJEB (ENA)
+#         query = f"{accession}[BioProject]"
+#     elif accession.startswith(("SRP", "DRP", "ERP")):
+#         # SRA Study / DDBJ Study / ENA Study
+#         query = f"{accession}[SRA Study]"
+#     elif accession.startswith(("SRR", "DRR", "ERR")):
+#         # Direct run accession — bypass list fetching entirely
+#         return [accession]
+#     else:
+#         query = accession
+#
+#     try:
+#         cmd: list[str] = [
+#                 "esearch",
+#                 "-db sra",
+#                 f"-query '{query}'",
+#                 "|",
+#                 "efetch",
+#                 "-format runinfo",
+#                 "|",
+#                 "cut",
+#                 "-d ','",
+#                 "-f1",
+#                 "|",
+#                 "tail",
+#                 "-n",
+#                 "+2"
+#             ]
+#         result = run(
+#                 cmd,
+#                 shell=True,
+#                 capture_output=True,
+#                 text=True
+#             )
+#
+#         if result.returncode != 0:
+#             raise RuntimeError(
+#                 f"Failed to fetch SRR list for {accession}"
+#             )
+#
+#         # Accept NCBI (SRR), DDBJ (DRR), and ENA (ERR) run prefixes
+#         srr_list = [
+#                 line.strip()
+#                 for line in result.stdout.splitlines()
+#                 if line.strip().startswith(
+#                     ("SRR", "DRR", "ERR")
+#                 )
+#             ]
+#         return srr_list
+#
+#     except (CalledProcessError, RuntimeError) as err_:
+#         raise RuntimeError from err_
