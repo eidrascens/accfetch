@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, Self
 from json import dump, load
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 
 
 class State:

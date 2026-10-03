@@ -1,6 +1,6 @@
 import shutil
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 
 
 def check_disk_space(

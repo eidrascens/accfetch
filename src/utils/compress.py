@@ -5,7 +5,7 @@ from pathlib import Path
 from shutil import copyfileobj
 from subprocess import CalledProcessError, run
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 from src.utils.housekeeping import remove_file
 
 

@@ -1,7 +1,7 @@
 from typing import Any
 from requests import get, exceptions
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 
 
 def fetch_srr_list(

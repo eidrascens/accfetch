@@ -4,7 +4,7 @@ from os.path import exists, join, dirname, isdir, isfile
 from os import makedirs, listdir, remove
 from typing import Any, Optional
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 from src.utils.compress import compression
 from src.commands.run_cmd import RunCMD
 from src.utils.state import State

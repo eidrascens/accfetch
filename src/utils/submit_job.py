@@ -1,7 +1,7 @@
 from subprocess import run
 from pathlib import Path
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 
 
 def submit_array_job(log_: Logger, SCRIPT_PATH: Path):

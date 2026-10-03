@@ -2,7 +2,7 @@ from pathlib import Path
 from os.path import exists, isdir
 from os import remove, mkdir
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 
 
 def is_downloaded(srr: str, OUT_DIR: Path) -> bool:

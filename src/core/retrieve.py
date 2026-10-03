@@ -4,7 +4,7 @@ from tomllib import load
 from pathlib import Path
 from typing import Self
 
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 from src.utils.housekeeping import fix_dir
 
 

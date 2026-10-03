@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Self
 
 from src.utils.housekeeping import is_downloaded
-from src.utils.log.logger import Logger
+from src.utils.log.custom_logger import Logger
 
 
 class BuildCmd:
