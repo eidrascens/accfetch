@@ -9,7 +9,7 @@ from src.utils.log.logger import Logger
 from src.utils.housekeeping import remove_file
 
 
-def compress_fastq_file(
+def fallback_compression(
         log_: Logger,
         FASTQ_FILE: Path,
         compression_level: int,
@@ -52,8 +52,7 @@ def compress_fastq_file(
     return False
 
 
-
-def compress_fastq(
+def compression(
         log_: Logger,
         FASTQ_FILE: Path,
         PIGZ_PATH: Path,
