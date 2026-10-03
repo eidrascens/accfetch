@@ -25,10 +25,36 @@ class State:
             state: dict[str, Any]
         ) -> None:
         self.log_: Logger = log_
-        self.STATE_FILE: Path = STATE_FILE
-        self.state: dict[str, Any] = state
+        self.STATE_FILE: Path = OUT_DIR / (
+                ".state_file-%s" % (
+                    vsdate(no_spaces=True)
+                )
+            )
+        self.state: dict[str, dict[str, str | Path]] = {}
 
-    def load_state(self: Self) -> Dict[str, Any] | None:
+    def create_state_file(self: Self) -> None:
+        if exists(self.STATE_FILE):
+            raise FileExistsError
+
+        try:
+            with open(
+                    self.STATE_FILE,
+                    "w",
+                    encoding="utf-8"
+                ) as state_file_:
+                dump({}, state_file_)
+        except FileExistsError as _:
+            self.log_.warn(
+                "%s already exists!" % ( self.STATE_FILE )
+            )
+        except OSError as err_:
+            self.log_.err(
+                "Cannot create state file %s" % (
+                    self.STATE_FILE
+                ), err_
+            )
+
+    def load_state_file(self: Self) -> dict:
         """Load state from JSON file."""
 
         try:
