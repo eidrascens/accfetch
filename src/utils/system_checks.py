@@ -3,6 +3,8 @@ from typing import Self
 from pathlib import Path
 
 from src.utils.log.custom_logger import Logger
+from src.utils.misc.id_gen import id_gen
+from src.utils.misc.housekeeping import remove_file
 
 
 class SystemChecks:
@@ -30,6 +32,34 @@ class SystemChecks:
             )
         else:
             self.log_.info("%0.2f GB available" % ( free_gb ))
+            return True
+
+        return False
+
+    def check_permissions(self: Self) -> bool:
+        test_file_path: Path = self.OUT_DIR / f"{id_gen()}.txt"
+        try:
+            with open(
+                    test_file_path,
+                    "w",
+                    encoding="utf-8"
+                ) as test_file_:
+                test_file_.write("HELLO WORLD!")
+
+            with open(
+                    test_file_path,
+                    "r",
+                    encoding="utf-8"
+                ) as test_file_:
+                test_file_.read()
+        except PermissionError as err_:
+            self.log_.err(
+                "No sufficient permission for %s!" % (
+                    self.OUT_DIR
+                ), err_
+            )
+        else:
+            remove_file(self.log_, test_file_path)
             return True
 
         return False
