@@ -1,9 +1,11 @@
-from json import dump, load
+from json import dump, load, loads
 import os
+from os.path import exists
 from pathlib import Path
-from typing import Any, Dict, Self
+from typing import Self
 
 from src.utils.log.custom_logger import Logger
+from src.utils.misc.get_dates import vsdate
 
 
 class State:
@@ -21,8 +23,7 @@ class State:
     def __init__(
             self: Self,
             log_: Logger,
-            STATE_FILE: Path,
-            state: dict[str, Any]
+            OUT_DIR: Path
         ) -> None:
         self.log_: Logger = log_
         self.STATE_FILE: Path = OUT_DIR / (
@@ -84,7 +85,6 @@ class State:
             ) as temp_state_file_:
             dump(self.state, temp_state_file_, indent=4)
         os.replace(TMP_STATE_FILE, self.STATE_FILE)
-
 
     def update_state(
             self: Self,
