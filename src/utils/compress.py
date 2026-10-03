@@ -64,7 +64,7 @@ def compression(
                 f"-{COMP_LVL}",
                 "-p",
                 f"{cpu_count()}",
-                "-k" if keep_original else "-f",
+                "-f",
                 f"{FASTQ_FILE}"
             ]
         run(cmd, check=True)
