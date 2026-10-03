@@ -12,6 +12,7 @@ from src.utils.housekeeping import remove_file
 def fallback_compression(
         log_: Logger,
         FASTQ_FILE: Path,
+        COMP_LVL: int = 6,
     ) -> tuple[Path, bool]:
     """Compress a single FASTQ file using gzip with specified COMP_LVL."""
 
@@ -54,6 +55,7 @@ def compression(
         log_: Logger,
         FASTQ_FILE: Path,
         PIGZ_PATH: Path,
+        COMP_LVL: int = 6
     ) -> tuple[Path, bool]:
     """
     Compress a single FASTQ file.
