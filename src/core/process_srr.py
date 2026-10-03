@@ -47,7 +47,7 @@ def process_single_srr(
         return True
 
     # 1. Prefetch (only if enabled)
-    prefetch_done = state.get_state(srr, "prefetch", False)
+    prefetch_done = state.get_state(srr)
     if not prefetch_done:
         prefetch_ok = run_cmd.run_prefetch(
                 srr, max_size, SRA_LOG_FILE
@@ -78,7 +78,7 @@ def process_single_srr(
         )
         return False
 
-    if state.get_state(srr, "converted", False):
+    if state.get_state(srr):
         log_.info(
             "%s: Conversion already done (from state)." % ( srr )
         )
@@ -104,7 +104,7 @@ def process_single_srr(
     #     update_state(state, srr, "converted", True)
     #     save_state(state_file, state)
 
-    compression_done = state.get_state(srr, "compressed", False)
+    compression_done = state.get_state(srr)
     if not compression_done:
         fastq_files = []
         for file_ in listdir(OUT_DIR):
