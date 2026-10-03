@@ -74,15 +74,15 @@ class State:
 
         return loads(f"{self.state}")
 
-    def save_state(self: Self) -> None:
+    def _save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
         TMP_STATE_FILE: Path = Path(f"{self.STATE_FILE}.tmp")
         with open(
                 TMP_STATE_FILE,
                 "w",
                 encoding="utf-8"
-            ) as file_:
-            dump(self.state, file_, indent=4)
+            ) as temp_state_file_:
+            dump(self.state, temp_state_file_, indent=4)
         os.replace(TMP_STATE_FILE, self.STATE_FILE)
 
 
