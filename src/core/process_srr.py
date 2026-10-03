@@ -71,16 +71,16 @@ def process_single_srr(
         return False
 
     conversion_done = get_state(state, srr, "converted", False)
-    if not conversion_done:
-        conv_ok = run_cmd.run_fasterq_dump(
-                srr,
-                SRA_FILE,
-                TMP_DIR,
-                SRA_LOG_FILE
-            )
-        if not conv_ok:
-            log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
-            return False
+        log_.info(f"Conversion already done for {srr} (from state).")
+
+    if not run_cmd.run_fasterq_dump(
+            srr,
+            SRA_FILE,
+            TMP_DIR,
+            SRA_LOG_FILE
+        )
+        log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+        return False
 
     # if lock:
     #     with lock:
