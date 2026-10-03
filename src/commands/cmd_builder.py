@@ -1,5 +1,4 @@
 from multiprocessing import cpu_count
-
 from pathlib import Path
 from subprocess import run
 from typing import Self
@@ -18,9 +17,7 @@ class BuildCMD:
         self.conda_env: Path = conda_env
 
     def build_prefetch_cmd(
-            self: Self,
-            srr: str,
-            max_size: int = 20
+            self: Self, srr: str, max_size: int = 20
         ) -> list[str | Path]:
         """Build the command list for running prefetch."""
         return [
@@ -41,7 +38,7 @@ class BuildCMD:
         ) -> list[str | Path]:
         """Build the command for fasterq-dump."""
 
-        
+
         return [
                 "fasterq-dump",
                 SRA_FILE,
@@ -50,7 +47,6 @@ class BuildCMD:
                 "--threads",
                 f"{cpu_count()}"
             ]
-
 
 
 
