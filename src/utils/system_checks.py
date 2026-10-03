@@ -63,3 +63,9 @@ class SystemChecks:
             return True
 
         return False
+
+    def pre_op_checks(self: Self, min_disk_space: float) -> bool:
+        return (
+            self.check_disk_space(min_disk_space) and
+            self.check_permissions()
+        )
