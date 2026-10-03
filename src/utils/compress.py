@@ -17,7 +17,6 @@ def fallback_compression(
     ) -> tuple[Path, bool]:
     """Compress a single FASTQ file using gzip with specified COMP_LVL."""
 
-
     try:
         with open(
                 FASTQ_FILE, "rb"
@@ -45,7 +44,6 @@ def fallback_compression(
 def compression(
         log_: Logger,
         FASTQ_FILE: Path,
-        PIGZ_PATH: Path,
         COMP_LVL: int = 6
     ) -> tuple[Path, bool]:
     """
@@ -60,7 +58,7 @@ def compression(
         if not exists(PIGZ_PATH):
             raise RuntimeError(f"{PIGZ_PATH} does not exists.")
         cmd = [
-                PIGZ_PATH,
+                "pigz",
                 f"-{COMP_LVL}",
                 "-p",
                 f"{cpu_count()}",
