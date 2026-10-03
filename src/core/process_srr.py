@@ -1,12 +1,14 @@
+import concurrent
+from os import listdir, makedirs, remove
+from os.path import dirname, exists, isdir, isfile, join
 from pathlib import Path
 from shutil import rmtree
-from os.path import exists, join, dirname, isdir, isfile
-from os import makedirs, listdir, remove
-from typing import Any, Optional
+import threading
+from typing import Any
 
-from src.utils.log.custom_logger import Logger
-from src.utils.compress import compression
 from src.commands.run_cmd import RunCMD
+from src.utils.compress import compression
+from src.utils.log.custom_logger import Logger
 from src.utils.state import State
 
 
@@ -93,7 +95,7 @@ def process_single_srr(
                 srr
             )
         )
-        
+
         return False
 
     # if lock:

@@ -1,12 +1,12 @@
-from multiprocessing import cpu_count
 import gzip as gzip_module
-from os.path import realpath, dirname, exists
+from multiprocessing import cpu_count
+from os.path import dirname, exists, realpath
 from pathlib import Path
 from shutil import copyfileobj
 from subprocess import CalledProcessError, run
 
-from src.utils.log.custom_logger import Logger
 from src.utils.housekeeping import remove_file
+from src.utils.log.custom_logger import Logger
 
 
 def fallback_compression(

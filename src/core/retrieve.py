@@ -1,11 +1,10 @@
-from os.path import join, exists
-from tomllib import load
-
+from os.path import exists, join
 from pathlib import Path
+from tomllib import load
 from typing import Self
 
-from src.utils.log.custom_logger import Logger
 from src.utils.housekeeping import fix_dir
+from src.utils.log.custom_logger import Logger
 
 
 class Retrieve:

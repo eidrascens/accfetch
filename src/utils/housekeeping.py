@@ -1,6 +1,6 @@
-from pathlib import Path
+from os import mkdir, remove
 from os.path import exists, isdir
-from os import remove, mkdir
+from pathlib import Path
 
 from src.utils.log.custom_logger import Logger
 

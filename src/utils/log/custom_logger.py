@@ -1,7 +1,7 @@
 import logging
+from pathlib import Path
 import random
 from string import ascii_letters, digits
-from pathlib import Path
 from typing import Any, Optional, Self
 
 from rich.logging import RichHandler

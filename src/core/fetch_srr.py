@@ -1,5 +1,6 @@
 from typing import Any
-from requests import get, exceptions
+
+from requests import exceptions, get
 
 from src.utils.log.custom_logger import Logger
 

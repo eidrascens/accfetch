@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 def cdate():
     return datetime.now().strftime("%Y-%m-%d")
 

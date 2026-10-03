@@ -1,7 +1,7 @@
+from json import dump, load
 import os
 from pathlib import Path
 from typing import Any, Dict, Self
-from json import dump, load
 
 from src.utils.log.custom_logger import Logger
 

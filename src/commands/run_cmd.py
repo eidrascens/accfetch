@@ -1,9 +1,9 @@
 from pathlib import Path
-from subprocess import DEVNULL, CalledProcessError, run, STDOUT
+from subprocess import CalledProcessError, DEVNULL, STDOUT, run
 from typing import Self
 
-from src.utils.log.custom_logger import Logger
 from src.utils.command_builder import BuildCmd
+from src.utils.log.custom_logger import Logger
 
 
 

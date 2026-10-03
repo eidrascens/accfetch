@@ -1,5 +1,5 @@
-from subprocess import run
 from pathlib import Path
+from subprocess import run
 
 from src.utils.log.custom_logger import Logger
 
