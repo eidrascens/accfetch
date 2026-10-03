@@ -37,9 +37,7 @@ class BuildCMD:
             ]
 
     def build_fasterq_dump_cmd(
-            self: Self,
-            SRA_FILE: Path,
-            TMP_DIR: Path
+            self: Self, SRA_FILE: Path
         ) -> list[str | Path]:
         """Build the command for fasterq-dump."""
 
@@ -64,9 +62,7 @@ class BuildCMD:
                 "-O",
                 self.OUT_DIR,
                 "--threads",
-                f"{cpu_count()}",
-                "-t",
-                TMP_DIR
+                f"{cpu_count()}"
             ]
 
 
