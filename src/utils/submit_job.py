@@ -13,11 +13,11 @@ def submit_array_job(log_: Logger, SCRIPT_PATH: Path):
                 text=True,
                 check=False
             )
-        if result.returncode == 0:
-            log_.info(
-                "Array job submitted: %s" % ( result.stdout.strip() )
-            )
-        log_.err("Submission failed: %s" % ( result.stderr.strip() ))
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip())
+        log_.info(
+            "Array job submitted: %s" % ( result.stdout.strip() )
+        )
     except (CalledProcessError, RuntimeError) as err_:
         log_.err("Error submitting job.", err_)
     else:
