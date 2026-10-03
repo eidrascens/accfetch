@@ -54,9 +54,6 @@ def compression(
     COMP_FASTQ_FILE = FASTQ_FILE.with_suffix(FASTQ_FILE.suffix + ".gz")
 
     try:
-        # pigz: -N = COMP_LVL, -p = threads, -k = keep original, -f = force overwrite
-        if not exists(PIGZ_PATH):
-            raise RuntimeError(f"{PIGZ_PATH} does not exists.")
         cmd = [
                 "pigz",
                 f"-{COMP_LVL}",
