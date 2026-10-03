@@ -1,11 +1,8 @@
 from multiprocessing import cpu_count
 from pathlib import Path
-
 from typing import Self
 
 from src.utils.log.custom_logger import Logger
-
-
 
 
 class BuildCMD:

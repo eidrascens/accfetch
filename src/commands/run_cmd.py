@@ -6,7 +6,6 @@ from src.commands.cmd_builder import BuildCMD
 from src.utils.log.custom_logger import Logger
 
 
-
 class RunCMD:
     def __init__(
             self: Self, log_: Logger, OUT_DIR: Path, conda_env: Path
