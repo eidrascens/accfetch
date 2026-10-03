@@ -88,20 +88,18 @@ class State:
     def update_state(
             self: Self,
             srr: str,
-            key: str,
-            value: bool = True
+            status: str,
+            SRR_PATH: Path
         ) -> None:
         """Update state for a given SRR."""
-        if srr not in self.state:
-            self.state[srr] = {}
-        self.state[srr][key] = value
-
+        self.state[srr] = {
+            "status": status,
+            "path": SRR_PATH
+        }
+        self._save_state()
 
     def get_state(
-            self: Self,
-            srr: str,
-            key: str,
-            default: bool = False
-        ) -> bool:
+            self: Self, srr: str
+        ) -> dict[str, str | Path]:
         """Get state value for SRR and key."""
-        return self.state.get(srr, {}).get(key, default)
+        return self.state.get(srr, {})
