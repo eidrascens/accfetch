@@ -12,26 +12,32 @@ class SystemChecks:
         self.log_: Logger = log_
         self.OUT_DIR: Path = OUT_DIR
 
-    def check_disk_space(self: Self, min_gb: float) -> bool:
+    def check_disk_space(self: Self, min_disk_space: float) -> bool:
         """Check available disk space in OUT_DIR."""
 
         try:
             _, _, free = shutil.disk_usage(self.OUT_DIR)
             free_gb: float = free / (1024 ** 3) # convert to Gb
-            if free_gb < min_gb:
+
+            self.log_.info(
+                "Available %0.2f GB. Required %0.2f GB" % (
+                    free_gb, min_disk_space
+                )
+            )
+
+            if free_gb < min_disk_space:
                 raise OSError
         except OSError as _:
             self.log_.err(
-                "Insufficient disk space in %s.\n"
-                "Available %0.2f GB, required %0.2f GB"
-                % ( self.OUT_DIR, free_gb, min_gb )
+                "Insufficient disk space in %s." % (
+                    self.OUT_DIR
+                )
             )
-        except Exception as err:
+        except Exception as err_:
             self.log_.warn(
-                "Could not check disk space: %s" % ( err )
+                "Could not check disk space: %s" % ( err_ )
             )
         else:
-            self.log_.info("%0.2f GB available" % ( free_gb ))
             return True
 
         return False
