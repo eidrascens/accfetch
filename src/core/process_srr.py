@@ -94,17 +94,17 @@ def process_single_srr(
     compression_done = state.get_state(srr, "compressed", False)
     if not compression_done:
         fastq_files = []
-        for f in listdir(OUT_DIR):
-            if f.startswith(srr) and f.endswith(".fastq"):
-                fastq_files.append(join(OUT_DIR, f))
+        for file_ in listdir(OUT_DIR):
+            if file_.startswith(srr) and file_.endswith(".fastq"):
+                fastq_files.append(join(OUT_DIR, file_))
 
         if not fastq_files:
             log_.err(f"No FASTQ files found for compression for {srr}")
             return False
 
         compressed_files: list[Path] = []
-        for fq in fastq_files:
-            comp_file, comp_stat = compression(log_, fq)
+        for fastq_fie_ in fastq_files:
+            comp_file, comp_stat = compression(log_, fastq_fie_)
             if comp_stat:
                 compressed_files.append(comp_file)
 
