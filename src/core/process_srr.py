@@ -1,7 +1,7 @@
 from pathlib import Path
 from shutil import rmtree
-from os.path import exists, join, dirname, isdir
-from os import makedirs, listdir, remove, walk
+from os.path import exists, join, dirname, isdir, isfile
+from os import makedirs, listdir, remove
 from typing import Any, Optional
 
 from src.utils.log.logger import Logger
@@ -121,16 +121,15 @@ def process_single_srr(
         #     update_state(state, srr, "compressed", True)
         #     save_state(state_file, state)
 
-    if compression_level is None or get_state(state, srr, "compressed", False):
-        try:
-            if isfile(SRA_FILE):
-                remove(SRA_FILE)
-                log_.info(f"Removed {SRA_FILE}")
-            elif isdir(SRA_DIR):
-                rmtree(SRA_DIR)
-                log_.info(f"Removed directory {SRA_DIR}")
-        except Exception as e:
-            log_.warn(f"Failed to remove .sra for {srr}: {e}")
+    try:
+        if isfile(SRA_FILE):
+            remove(SRA_FILE)
+            log_.info(f"Removed {SRA_FILE}")
+        elif isdir(SRA_DIR):
+            rmtree(SRA_DIR)
+            log_.info(f"Removed directory {SRA_DIR}")
+    except Exception as e:
+        log_.warn(f"Failed to remove .sra for {srr}: {e}")
 
     return True
 
