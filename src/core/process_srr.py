@@ -82,13 +82,13 @@ def process_single_srr(
             log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
             return False
 
-        # if lock:
-        #     with lock:
-        #         update_state(state, srr, "converted", True)
-        #         save_state(state_file, state)
-        # else:
-        #     update_state(state, srr, "converted", True)
-        #     save_state(state_file, state)
+    # if lock:
+    #     with lock:
+    #         update_state(state, srr, "converted", True)
+    #         save_state(state_file, state)
+    # else:
+    #     update_state(state, srr, "converted", True)
+    #     save_state(state_file, state)
 
     compression_done = state.get_state(srr, "compressed", False)
     if not compression_done:
@@ -112,15 +112,13 @@ def process_single_srr(
                 "Compression failed for %s" % ( compressed_files )
             )
             return False
-            # if lock:
-            #     with lock:
-            #         update_state(state, srr, "compressed", True)
-            #         save_state(state_file, state)
-            # else:
-            #     update_state(state, srr, "compressed", True)
-            #     save_state(state_file, state)
-    else:
-        log_.info(f"Conversion already done for {srr} (from state).")
+        # if lock:
+        #     with lock:
+        #         update_state(state, srr, "compressed", True)
+        #         save_state(state_file, state)
+        # else:
+        #     update_state(state, srr, "compressed", True)
+        #     save_state(state_file, state)
 
     if compression_level is None or get_state(state, srr, "compressed", False):
         try:
