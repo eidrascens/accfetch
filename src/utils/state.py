@@ -7,6 +7,17 @@ from src.utils.log.custom_logger import Logger
 
 
 class State:
+    # state file new format
+    #  str: dict[str, str | Path]
+    # {
+    #     SRR: {
+    #       str: hashmap
+    #         STATUS: PF, FD, or GZ
+    #           str: str
+    #         PATH: relevant path / Path
+    #           str: Path
+    #     }
+    # }
     def __init__(
             self: Self,
             log_: Logger,
