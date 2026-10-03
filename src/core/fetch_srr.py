@@ -1,3 +1,4 @@
+from subprocess import CalledProcessError
 from typing import Any
 
 from requests import exceptions, get
@@ -150,5 +151,5 @@ def fetch_srr_list(accession):
             ]
         return srr_list
 
-    except Exception as err_:
+    except (CalledProcessError, RuntimeError) as err_:
         raise RuntimeError from err_

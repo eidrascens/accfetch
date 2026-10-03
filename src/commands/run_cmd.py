@@ -54,12 +54,6 @@ class RunCMD:
                     srr, CMD_LOG
                 ), err_
             )
-        except Exception as err_:
-            self.log_.err(
-                "Error occured while executing %s (log: %s)" % (
-                    fasterq_dump_cmd, CMD_LOG
-                ), err_
-            )
         else:
             return True
 
@@ -101,12 +95,6 @@ class RunCMD:
             self.log_.err(
                 "prefetch failed for %s (log: %s)" % (
                     srr, CMD_LOG
-                ), err_
-            )
-        except Exception as err_:
-            self.log_.err(
-                "Error occured while executing %s (log: %s)" % (
-                    prefetch_cmd, CMD_LOG
                 ), err_
             )
         else:

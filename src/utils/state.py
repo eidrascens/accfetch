@@ -27,7 +27,7 @@ class State:
                     encoding="utf-8"
                 ) as file:
                 return load(file)
-        except (FileNotFoundError) as err_:
+        except (FileNotFoundError, OSError) as err_:
             self.log_.warn(
                 "Error reading %s, starting fresh." % (
                     self.STATE_FILE

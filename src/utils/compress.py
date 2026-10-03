@@ -31,7 +31,7 @@ def fallback_compression(
             ) as gz_out:
                 copyfileobj(f_in, gz_out)
         remove_file(log_, FASTQ_FILE)
-    except Exception as err_:
+    except OSError as err_:
         log_.err(
             "Cannot compress %s" % ( FASTQ_FILE ), err_
         )

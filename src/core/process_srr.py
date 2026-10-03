@@ -145,7 +145,7 @@ def process_single_srr(
         elif isdir(SRA_DIR):
             rmtree(SRA_DIR)
             log_.info("Removed directory %s" % ( SRA_DIR ))
-    except Exception as err_:
+    except (OSError, FileNotFoundError) as err_:
         log_.warn("%s: Failed to remove .sra" % ( srr ), err_)
 
     return True

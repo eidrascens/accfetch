@@ -1,5 +1,5 @@
 from pathlib import Path
-from subprocess import run
+from subprocess import CalledProcessError, run
 
 from src.utils.log.custom_logger import Logger
 
@@ -18,8 +18,8 @@ def submit_array_job(log_: Logger, SCRIPT_PATH: Path):
                 "Array job submitted: %s" % ( result.stdout.strip() )
             )
         log_.err("Submission failed: %s" % ( result.stderr.strip() ))
-    except Exception as err:
-        log_.err("Error submitting: %s" % ( err ), err)
+    except (CalledProcessError, RuntimeError) as err_:
+        log_.err("Error submitting job.", err_)
     else:
         return True
 

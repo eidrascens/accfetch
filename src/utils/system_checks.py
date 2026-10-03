@@ -33,10 +33,6 @@ class SystemChecks:
                     self.OUT_DIR
                 )
             )
-        except Exception as err_:
-            self.log_.warn(
-                "Could not check disk space: %s" % ( err_ )
-            )
         else:
             return True
 
