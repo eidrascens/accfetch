@@ -9,7 +9,7 @@ from src.utils.misc.housekeeping import is_downloaded
 from src.utils.misc.id_gen import id_gen
 
 
-class BuildCmd:
+class BuildCMD:
     def __init__(
             self: Self, log_: Logger, OUT_DIR: Path, conda_env: Path
         ) -> None:
