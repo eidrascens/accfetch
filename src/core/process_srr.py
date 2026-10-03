@@ -153,13 +153,14 @@ def process_srr_list(
     log_: Logger,
     srr_list: list[str],
     OUT_DIR: Path,
+    parallel_jobs: int,
     state: dict[str, Any],
     state_file: str,
 ) -> tuple[int, int]:
     """Process a list of SRRs using parallel jobs as specified."""
     success = 0
     fail = 0
-    parallel_jobs = max(1, args.parallel_jobs)
+    parallel_jobs = max(1, parallel_jobs)
 
     # Create a lock only if we are going to use multiple threads
     lock = threading.Lock() if parallel_jobs > 1 else None
