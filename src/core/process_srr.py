@@ -32,16 +32,14 @@ def process_single_srr(
 
     makedirs(dirname(SRA_LOG_FILE), exist_ok=True)
 
-    if skip_existing and run_fastq:
-        existing_fastq = (
+    if (
             exists(f"{FASTQ_BASE}.fastq") or
             exists(f"{FASTQ_BASE}_1.fastq") or
             exists(f"{FASTQ_BASE}.fastq.gz") or
             exists(f"{FASTQ_BASE}_1.fastq.gz")
-        )
-        if existing_fastq:
-            log_.info(f"Skipping {srr}: FASTQ output already exists.")
-            return True
+        ):
+        log_.info(f"Skipping {srr}: FASTQ output already exists.")
+        return True
 
     # 1. Prefetch (only if enabled)
     prefetch_done = get_state(state, srr, "prefetch", False)
