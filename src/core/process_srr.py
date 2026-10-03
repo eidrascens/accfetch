@@ -40,7 +40,9 @@ def process_single_srr(
             exists(f"{FASTQ_BASE}.fastq.gz") or
             exists(f"{FASTQ_BASE}_1.fastq.gz")
         ):
-        log_.info(f"Skipping {srr}: FASTQ output already exists.")
+        log_.info(
+            "%s: Skipping, FASTQ output already exists." % ( srr )
+        )
         return True
 
     # 1. Prefetch (only if enabled)
@@ -50,7 +52,9 @@ def process_single_srr(
                 srr, max_size, SRA_LOG_FILE
             )
         if not prefetch_ok:
-            log_.err(f"Prefetch failed for {srr}, skipping conversion.")
+            log_.err(
+                "%s: Prefetch failed, skipping conversion." % ( srr )
+            )
             return False
         # if lock:
         #     with lock:
@@ -60,7 +64,9 @@ def process_single_srr(
         #     update_state(state, srr, "prefetch", True)
         #     save_state(state_file, state)
     else:
-        log_.info(f"Prefetch already done for {srr} (from state).")
+        log_.info(
+            "%s: Prefetch already done (from state)." % ( srr )
+        )
 
     # Locate actual sra path
     if not exists(SRA_FILE):
@@ -72,15 +78,22 @@ def process_single_srr(
         return False
 
     if state.get_state(srr, "converted", False):
-        log_.info(f"Conversion already done for {srr} (from state).")
+        log_.info(
+            "%s: Conversion already done (from state)." % ( srr )
+        )
 
     if not run_cmd.run_fasterq_dump(
             srr,
             SRA_FILE,
             TMP_DIR,
             SRA_LOG_FILE
+        ):
+        log_.err(
+            "%s: fasterq-dump failed, keeping .sra for retry." % (
+                srr
+            )
         )
-        log_.err(f"fasterq-dump failed for {srr}, keeping .sra file for retry.")
+        
         return False
 
     # if lock:
@@ -99,7 +112,9 @@ def process_single_srr(
                 fastq_files.append(join(OUT_DIR, file_))
 
         if not fastq_files:
-            log_.err(f"No FASTQ files found for compression for {srr}")
+            log_.err(
+                "No %s FASTQ file(s) for compression" % ( srr )
+            )
             return False
 
         compressed_files: list[Path] = []
@@ -124,12 +139,12 @@ def process_single_srr(
     try:
         if isfile(SRA_FILE):
             remove(SRA_FILE)
-            log_.info(f"Removed {SRA_FILE}")
+            log_.info("Removed %s" % ( SRA_FILE ))
         elif isdir(SRA_DIR):
             rmtree(SRA_DIR)
-            log_.info(f"Removed directory {SRA_DIR}")
+            log_.info("Removed directory %s" % ( SRA_DIR ))
     except Exception as e:
-        log_.warn(f"Failed to remove .sra for {srr}: {e}")
+        log_.warn("%s: Failed to remove .sra" % ( srr ), err_)
 
     return True
 
@@ -150,7 +165,11 @@ def process_srr_list(
     lock = threading.Lock() if parallel_jobs > 1 else None
 
     if parallel_jobs > 1:
-        log_.info(f"Processing {len(srr_list)} SRRs with {parallel_jobs} parallel jobs.")
+        log_.info(
+            "Processing %d SRRs with %s parallel jobs." % (
+                len(srr_list), parallel_jobs
+            )
+        )
         with concurrent.futures.ThreadPoolExecutor(max_workers=parallel_jobs) as executor:
             futures = {
                 executor.submit(
@@ -170,7 +189,11 @@ def process_srr_list(
                     success += 1
                 else:
                     fail += 1
-                log_.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
+                log_.info(
+                    "Progress: %d done (success=%d, failed=%d)" % (
+                        (success + fail/len(srr_list)), success, fail
+                    )
+                )
     else:
         # sequential mode, no lock needed
         for srr in srr_list:
@@ -185,6 +208,10 @@ def process_srr_list(
                 success += 1
             else:
                 fail += 1
-            log_.info(f"Progress: {success+fail}/{len(srr_list)} done (success={success}, failed={fail})")
+            log_.info(
+                    "Progress: %d done (success=%d, failed=%d)" % (
+                        (success + fail/len(srr_list)), success, fail
+                    )
+                )
 
     return success, fail
