@@ -68,7 +68,7 @@ def compression(
                 f"{FASTQ_FILE}"
             ]
         run(cmd, check=True)
-    except RuntimeError as err_:
+    except (RuntimeError, CalledProcessError) as err_:
         log_.warn(
             "Runtime error: falling back to Python Gzip", err_
         )
