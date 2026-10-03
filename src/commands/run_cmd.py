@@ -18,16 +18,13 @@ class RunCMD:
         self: Self,
         srr: str,
         sra_path: Path,
-        TMP_DIR: Path,
-        CMD_LOG: Path,
+        CMD_LOG: Path
     ) -> bool:
         """Run fasterq-dump on the .sra file, logging to a file.
 
         Returns True on success.
         """
-        fasterq_dump_cmd = self.cmd.build_fasterq_dump_cmd(
-                sra_path, TMP_DIR
-            )
+        fasterq_dump_cmd = self.cmd.build_fasterq_dump_cmd(sra_path)
         self.log_.info(
             "Running fasterq-dump for %s: %s" % (
                 srr, fasterq_dump_cmd

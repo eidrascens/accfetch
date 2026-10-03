@@ -18,7 +18,6 @@ def process_single_srr(
     OUT_DIR: Path,
     conda_env: Path,
     max_size: int,
-    TMP_DIR: Path,
     state: State
     # state_file: str,
     # lock: Optional[threading.Lock] = None,
@@ -87,7 +86,6 @@ def process_single_srr(
     if not run_cmd.run_fasterq_dump(
             srr,
             SRA_FILE,
-            TMP_DIR,
             SRA_LOG_FILE
         ):
         log_.err(
