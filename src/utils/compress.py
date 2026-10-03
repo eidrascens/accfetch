@@ -16,17 +16,7 @@ def fallback_compression(
     ) -> tuple[Path, bool]:
     """Compress a single FASTQ file using gzip with specified COMP_LVL."""
 
-    out_dir: Path = Path(
-            dirname( # get the directory of fastq file
-                realpath(FASTQ_FILE)
-            )
-        )
-    COMP_FASTQ_FILE: Path = Path(out_dir / f"{FASTQ_FILE}.gz")
-    log_.info(
-        "Compressing %s -> %s (COMP_LVL: %d)" % (
-            FASTQ_FILE, COMP_FASTQ_FILE, compression_level
-        )
-    )
+    
     try:
         with open(
                 FASTQ_FILE, "rb"
