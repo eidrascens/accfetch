@@ -2,7 +2,7 @@ from pathlib import Path
 from subprocess import CalledProcessError, DEVNULL, STDOUT, run
 from typing import Self
 
-from src.utils.command_builder import BuildCmd
+from src.commands.cmd_builder import BuildCMD
 from src.utils.log.custom_logger import Logger
 
 
@@ -12,7 +12,7 @@ class RunCMD:
             self: Self, log_: Logger, OUT_DIR: Path, conda_env: Path
         ) -> None:
         self.log_: Logger = log_
-        self.cmd: BuildCmd = BuildCMD(log_, OUT_DIR, conda_env)
+        self.cmd: BuildCMD = BuildCMD(log_, OUT_DIR, conda_env)
 
     def run_fasterq_dump(
         self: Self,
