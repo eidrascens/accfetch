@@ -3,8 +3,8 @@ from pathlib import Path
 from tomllib import load
 from typing import Self
 
-from src.utils.housekeeping import fix_dir
 from src.utils.log.custom_logger import Logger
+from src.utils.misc.housekeeping import fix_dir
 
 
 class Retrieve:
