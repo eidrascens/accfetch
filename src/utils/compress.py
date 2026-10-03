@@ -26,7 +26,7 @@ def fallback_compression(
             with gzip_module.GzipFile(
                 filename="",
                 mode="wb",
-                compresslevel=compression_level,
+                compresslevel=COMP_LVL,
                 fileobj=f_out
             ) as gz_out:
                 copyfileobj(f_in, gz_out)
