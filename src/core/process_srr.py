@@ -7,6 +7,7 @@ from typing import Any, Optional
 from src.utils.log.logger import Logger
 from src.utils.compress import compression
 from src.commands.run_cmd import RunCMD
+from src.utils.state import State
 
 
 def process_single_srr(
@@ -16,9 +17,9 @@ def process_single_srr(
     conda_env: Path,
     max_size: int,
     TMP_DIR: Path,
-    state: dict[str, Any],
-    state_file: str,
-    lock: Optional[threading.Lock] = None,
+    state: State
+    # state_file: str,
+    # lock: Optional[threading.Lock] = None,
 ) -> bool:
     """
     Full pipeline for one SRR: (optional) prefetch -> (optional) fasterq-dump ->
@@ -43,7 +44,7 @@ def process_single_srr(
         return True
 
     # 1. Prefetch (only if enabled)
-    prefetch_done = get_state(state, srr, "prefetch", False)
+    prefetch_done = state.get_state(srr, "prefetch", False)
     if not prefetch_done:
         prefetch_ok = run_cmd.run_prefetch(
                 srr, max_size, SRA_LOG_FILE
@@ -70,7 +71,7 @@ def process_single_srr(
         )
         return False
 
-    conversion_done = get_state(state, srr, "converted", False)
+    if state.get_state(srr, "converted", False):
         log_.info(f"Conversion already done for {srr} (from state).")
 
     if not run_cmd.run_fasterq_dump(
