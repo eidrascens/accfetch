@@ -1,4 +1,3 @@
-from subprocess import CalledProcessError
 from typing import Any
 
 from requests import exceptions, get

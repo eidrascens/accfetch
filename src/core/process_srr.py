@@ -1,4 +1,4 @@
-import concurrent
+import concurrent.futures
 from os import listdir, makedirs, remove
 from os.path import dirname, exists, isdir, isfile, join
 from pathlib import Path

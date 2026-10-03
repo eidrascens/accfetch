@@ -1,6 +1,5 @@
 import gzip as gzip_module
 from multiprocessing import cpu_count
-from os.path import dirname, exists, realpath
 from pathlib import Path
 from shutil import copyfileobj
 from subprocess import CalledProcessError, run
