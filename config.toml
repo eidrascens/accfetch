@@ -2,23 +2,9 @@
 ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
-ESEARCH_PARAMS = {
-    "db": "sra",
-    "retmax": 100000,
-    "retmode": "json"
-}
-EFETCH_PARAMS = {
-    "db": "sra",
-    "rettype": "runinfo",
-    "retmode": "text"
-}
-PARTITION_QOS_MAP = {
-    debug = "debug_default",
-    batch = "batch_default",
-    serial = "serial_default",
-    gpu = "gpu-p40_default",
-    gpu_a100 = "gpu-a100_default",
-}
+ESEARCH_PARAMS = {db = "sra", retmax = 100000, retmode = "json"}
+EFETCH_PARAMS = {db = "sra", rettype = "runinfo", retmode = "text"}
+PARTITION_QOS_MAP = {debug = "debug_default", batch = "batch_default", serial = "serial_default", gpu = "gpu-p40_default", gpu_a100 = "gpu-a100_default"}
 
 [RUN]
 TMP_DIR = ""
