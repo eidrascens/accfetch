@@ -33,14 +33,16 @@ def fetch_srr_list(
                 "idlist", []
             )
         if not uid_list:
-            raise RuntimeError(
-                f"No SRA records found for accession: {accession}"
+            log_.warn(
+                "No SRA records found for %s" % ( accession )
             )
         log_.info("Found %s SRA UIDs." % ( len(uid_list) ))
     except exceptions.RequestException as err_:
-        raise RuntimeError(
-                f"ESearch request failed: {err_}"
-            ) from err_
+        log_.warn(
+            "ESearch request failed for %s" % (
+                accession
+            ), err_
+        )
 
     EFETCH_URL = conf["SYSTEM"]["EFETCH_URL"]
     EFETCH_PARAMS = conf["SYSTEM"]["EFETCH_PARAMS"]
@@ -55,13 +57,14 @@ def fetch_srr_list(
         response.raise_for_status()
         csv_text = response.text
     except exceptions.RequestException as err_:
-        raise RuntimeError(
-                f"EFetch request failed: {err_}"
-            ) from err_
-
+        log_.warn(
+            "EFetch request failed for %s" % (
+                accession
+            ), err_
+        )
     lines = csv_text.strip().splitlines()
     if len(lines) < 2:
-        raise RuntimeError("Runinfo CSV is empty or malformed.")
+        log_.warn("Runinfo CSV is empty or malformed.")
 
     header = lines[0].split(",")
     run_col_index = None
@@ -70,8 +73,8 @@ def fetch_srr_list(
             run_col_index = header.index(alt)
             break
     if run_col_index is None:
-        raise RuntimeError(
-            f"Could not find 'Run' column in CSV header: {header}"
+        log_.warn(
+            "Could not find 'Run' column in %s" % ( header )
         )
 
     srr_list = []
@@ -85,8 +88,8 @@ def fetch_srr_list(
 
     srr_list = list(dict.fromkeys(srr_list))
     if not srr_list:
-        raise RuntimeError(
-            f"No SRR runs found for accession: {accession}"
+        log_.warn(
+            "No SRR runs found for %s" % ( accession )
         )
 
     log_.info(f"Total SRR runs to process: {len(srr_list)}")
