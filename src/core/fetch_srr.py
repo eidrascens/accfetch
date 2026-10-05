@@ -38,11 +38,12 @@ def fetch_srr_list(
             )
         log_.info("Found %d SRA UIDs." % ( len(uid_list) ))
     except exceptions.RequestException as err_:
-        log_.warn(
+        log_.err(
             "ESearch request failed for %s" % (
                 accession
             ), err_
         )
+        return []
 
     EFETCH_URL = conf["SYSTEM"]["EFETCH_URL"]
     EFETCH_PARAMS = conf["SYSTEM"]["EFETCH_PARAMS"]
@@ -57,16 +58,17 @@ def fetch_srr_list(
         response.raise_for_status()
         csv_text = response.text
     except exceptions.RequestException as err_:
-        log_.warn(
+        log_.err(
             "EFetch request failed for %s" % (
                 accession
             ), err_
         )
+        return []
 
     lines = csv_text.strip().splitlines()
 
     if len(lines) < 2:
-        log_.warn("Runinfo CSV is empty or malformed.")
+        log_.err("Runinfo CSV is empty or malformed.")
         return []
 
     header = lines[0].split(",")
@@ -78,7 +80,7 @@ def fetch_srr_list(
             break
 
     if run_col_index is None:
-        log_.warn(
+        log_.err(
             "Could not find 'Run' column in %s" % ( header )
         )
         return []
