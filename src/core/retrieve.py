@@ -5,6 +5,7 @@ from typing import Self
 
 from src.utils.log.custom_logger import Logger
 from src.utils.misc.housekeeping import fix_dir
+from src.core.fetch_srr import fetch_srr_list
 
 
 class Retrieve:
@@ -14,12 +15,12 @@ class Retrieve:
         with open(toml_conf, "rb", encoding="utf-8") as conf:
             conf = load(conf)
 
+        self.conf = conf
         self.prog = conf["program"]
         self.compression_lvl: int = 6
         self.dir = conf["dir"]
 
-    def retrieve(self: Self) -> None:
-
+    def retrieve(self: Self, accession: str) -> None:
         # Set state file path if not provided
         if self.prog["ST_FILE"] is None:
             state_file: Path = self.prog["OUT_DIR"] / ".sra_state.json"
@@ -35,7 +36,7 @@ class Retrieve:
 
         # Fetch SRR list
         try:
-            srr_list = fetch_srr_list(accession)
+            srr_list = fetch_srr_list(self.log_, self.conf, accession)
         except RuntimeError as e:
             self.log_.err(str(e))
             raise SystemExit
