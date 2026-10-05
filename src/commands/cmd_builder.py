@@ -13,9 +13,7 @@ class BuildCMD:
         self.OUT_DIR: Path = OUT_DIR
         self.conda_env: str = conda_env
 
-    def build_prefetch_cmd(
-            self: Self, srr: str, max_size: int = 20
-        ) -> list[str | Path]:
+    def build_prefetch_cmd(self: Self, srr: str) -> list[str | Path]:
         """Build the command list for running prefetch."""
         return [
                 "conda",
@@ -25,9 +23,7 @@ class BuildCMD:
                 "prefetch",
                 srr,
                 "-O",
-                self.OUT_DIR,
-                "--max-size",
-                f"{max_size}"
+                self.OUT_DIR
             ]
 
     def build_fasterq_dump_cmd(
