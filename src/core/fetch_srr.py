@@ -95,7 +95,9 @@ def fetch_srr_list(
         )
         return []
 
-    log_.info(f"Total SRR runs to process: {len(srr_list)}")
+    log_.info(
+        "SRR to process: %s %d" % ( srr_list, len(srr_list) )
+    )
     return srr_list
 
 # def fetch_srr_list(accession):
