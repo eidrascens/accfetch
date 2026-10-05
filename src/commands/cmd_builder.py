@@ -35,8 +35,6 @@ class BuildCMD:
             self: Self, SRA_FILE: Path
         ) -> list[str | Path]:
         """Build the command for fasterq-dump."""
-
-
         return [
                 "fasterq-dump",
                 SRA_FILE,

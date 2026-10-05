@@ -62,17 +62,21 @@ def fetch_srr_list(
                 accession
             ), err_
         )
+
     lines = csv_text.strip().splitlines()
+
     if len(lines) < 2:
         log_.warn("Runinfo CSV is empty or malformed.")
         return []
 
     header = lines[0].split(",")
+
     run_col_index = None
     for alt in ["Run", "run_accession", "RunAccession"]:
         if alt in header:
             run_col_index = header.index(alt)
             break
+
     if run_col_index is None:
         log_.warn(
             "Could not find 'Run' column in %s" % ( header )
@@ -99,6 +103,8 @@ def fetch_srr_list(
         "SRR to process: %s %d" % ( srr_list, len(srr_list) )
     )
     return srr_list
+
+
 
 # def fetch_srr_list(accession):
 #     """
