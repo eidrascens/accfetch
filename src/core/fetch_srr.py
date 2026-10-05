@@ -95,12 +95,8 @@ def fetch_srr_list(
             return []
 
         run_acc = fields[run_col_index].strip()
-        if line.strip():
-            fields = line.split(",")
-            if run_col_index < len(fields):
-                run_acc = fields[run_col_index].strip()
-                if run_acc.startswith("SRR"):
-                    srr_list.append(run_acc)
+        if run_acc.startswith(f"{accession[:2]}R"):
+            srr_list.append(run_acc)
 
     srr_list = list(dict.fromkeys(srr_list))
     if not srr_list:
