@@ -87,6 +87,14 @@ def fetch_srr_list(
 
     srr_list = []
     for line in lines[1:]:
+        if not line.strip():
+            return []
+
+        fields = line.split(",")
+        if run_col_index > len(fields):
+            return []
+
+        run_acc = fields[run_col_index].strip()
         if line.strip():
             fields = line.split(",")
             if run_col_index < len(fields):
