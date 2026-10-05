@@ -36,7 +36,7 @@ def fetch_srr_list(
             log_.warn(
                 "No SRA records found for %s" % ( accession )
             )
-        log_.info("Found %s SRA UIDs." % ( len(uid_list) ))
+        log_.info("Found %d SRA UIDs." % ( len(uid_list) ))
     except exceptions.RequestException as err_:
         log_.warn(
             "ESearch request failed for %s" % (
