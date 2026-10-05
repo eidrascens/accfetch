@@ -65,6 +65,7 @@ def fetch_srr_list(
     lines = csv_text.strip().splitlines()
     if len(lines) < 2:
         log_.warn("Runinfo CSV is empty or malformed.")
+        return []
 
     header = lines[0].split(",")
     run_col_index = None
@@ -76,6 +77,7 @@ def fetch_srr_list(
         log_.warn(
             "Could not find 'Run' column in %s" % ( header )
         )
+        return []
 
     srr_list = []
     for line in lines[1:]:
@@ -91,6 +93,7 @@ def fetch_srr_list(
         log_.warn(
             "No SRR runs found for %s" % ( accession )
         )
+        return []
 
     log_.info(f"Total SRR runs to process: {len(srr_list)}")
     return srr_list
