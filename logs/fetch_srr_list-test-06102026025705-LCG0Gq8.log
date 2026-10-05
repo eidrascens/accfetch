@@ -1,8 +1,7 @@
-INFO Setup of logger complete, started /var/home/aeersriv/Code.eidrascens/rice_rnaSeq_meta_analysis/src/core/../../fetch_srr_list-test-06102026024020-V2qOLat.log Tuesday 06/October/2026 02:40:20 +0800 PST
+INFO Setup of logger complete, started /var/home/aeersriv/Code.eidrascens/rice_rnaSeq_meta_analysis/test/../logs/fetch_srr_list-test-06102026025705-LCG0Gq8.log Tuesday 06/October/2026 02:57:05 +0800 PST
 INFO Fetching SRR list for accession: DRP014210
 INFO Found 12 SRA UIDs.
-WARNING No SRR runs found for DRP014210
-WARNING None: No SRR runs found for DRP014210
+INFO SRR to process: ['DRR730469', 'DRR730470', 'DRR730471', 'DRR730472', 'DRR730473', 'DRR730474', 'DRR730475', 'DRR730476', 'DRR730477', 'DRR730478', 'DRR730479', 'DRR730480'] 12
 INFO Fetching SRR list for accession: SRP453361
 INFO Found 6 SRA UIDs.
 INFO SRR to process: ['SRR25517337', 'SRR25517338', 'SRR25517339', 'SRR25517334', 'SRR25517335', 'SRR25517336'] 6
