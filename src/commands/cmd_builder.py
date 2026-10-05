@@ -7,11 +7,11 @@ from src.utils.log.custom_logger import Logger
 
 class BuildCMD:
     def __init__(
-            self: Self, log_: Logger, OUT_DIR: Path, conda_env: Path
+            self: Self, log_: Logger, OUT_DIR: Path, conda_env: str
         ) -> None:
         self.log_: Logger = log_
         self.OUT_DIR: Path = OUT_DIR
-        self.conda_env: Path = conda_env
+        self.conda_env: str = conda_env
 
     def build_prefetch_cmd(
             self: Self, srr: str, max_size: int = 20
