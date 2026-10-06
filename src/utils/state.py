@@ -27,10 +27,13 @@ class State:
             state_file_name: str
         ) -> None:
         self.log_: Logger = log_
+
         try:
             self.STATE_FILE: Path = OUT_DIR / state_file_name
             if not exists(self.STATE_FILE):
-                
+
+
+                self.log_.info("%s does not exists" % ( self.STATE_FILE ))
                 raise TypeError
         except TypeError as _:
             self.STATE_FILE: Path = OUT_DIR / (
@@ -38,12 +41,17 @@ class State:
                         vsdate(no_spaces=True)
                     )
                 )
+            self.log_.info("New state file: %s" % ( self.STATE_FILE ))
+
         self.state: dict[str, dict[str, str | Path]] = {}
 
     def create_state_file(self: Self) -> None:
         if exists(self.STATE_FILE):
             raise FileExistsError
 
+        self.log_.info(
+            "Creating new state file: %s" % ( self.STATE_FILE )
+        )
         try:
             with open(
                     self.STATE_FILE,
@@ -68,6 +76,10 @@ class State:
         try:
             if not exists(self.STATE_FILE):
                 self.create_state_file()
+
+            self.log_.info(
+                "Reading state file %s" % ( self.STATE_FILE )
+            )
             with open(
                     self.STATE_FILE,
                     "r",
@@ -104,6 +116,11 @@ class State:
             SRR_PATH: Path
         ) -> None:
         """Update state for a given SRR."""
+        self.log_.info(
+            "Updating state of %s with values %s, %s" % (
+                srr, status, SRR_PATH
+            )
+        )
         self.state[srr] = {
             "status": status,
             "path": str(SRR_PATH)
@@ -114,4 +131,10 @@ class State:
             self: Self, srr: str, state_property: str
         ) -> str | Path:
         """Get state value for SRR and key."""
+        self.log_.info(
+            "Retrieving the state property %s of %s" % (
+                state_property, srr
+            )
+        )
         return self.state.get(srr, {}).get(state_property, "")
+
