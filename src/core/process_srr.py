@@ -18,7 +18,8 @@ def process_single_srr(
     OUT_DIR: Path,
     conda_env: Path,
     max_size: int,
-    state: State
+    state: State,
+    CMD_LOG: Path
     # state_file: str,
     # lock: Optional[threading.Lock] = None,
 ) -> bool:
@@ -31,9 +32,6 @@ def process_single_srr(
     SRA_FILE: Path = OUT_DIR / f"{srr}.sra"
     SRA_DIR: Path = OUT_DIR / srr
     FASTQ_BASE: Path = OUT_DIR / srr
-    SRA_LOG_FILE: Path = OUT_DIR / ".logs" / f"{srr}.log"
-
-    makedirs(dirname(SRA_LOG_FILE), exist_ok=True)
 
     if (
             exists(f"{FASTQ_BASE}.fastq") or
@@ -50,7 +48,7 @@ def process_single_srr(
     prefetch_done = state.get_state(srr)
     if not prefetch_done:
         prefetch_ok = run_cmd.run_prefetch(
-                srr, max_size, SRA_LOG_FILE
+                srr, max_size, CMD_LOG
             )
         if not prefetch_ok:
             log_.err(
@@ -79,7 +77,7 @@ def process_single_srr(
     if not run_cmd.run_fasterq_dump(
             srr,
             SRA_FILE,
-            SRA_LOG_FILE
+            CMD_LOG
         ):
         log_.err(
             "%s: fasterq-dump failed, keeping .sra for retry." % (
