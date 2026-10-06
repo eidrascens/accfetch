@@ -1,6 +1,7 @@
 from os import mkdir, remove
-from os.path import exists, isdir
+from os.path import exists, isdir, isfile
 from pathlib import Path
+from shutil import rmtree
 
 from src.utils.log.custom_logger import Logger
 
@@ -25,7 +26,12 @@ def is_downloaded(srr: str, OUT_DIR: Path) -> bool:
 
 def remove_file(log: Logger, FILE_PATH: Path) -> None:
     try:
-        remove(FILE_PATH)
+        if isfile(FILE_PATH):
+            remove(FILE_PATH)
+        elif isdir(FILE_PATH):
+            rmtree(FILE_PATH)
+        else:
+            raise OSError
     except FileNotFoundError as _:
         log.info("%s does not exist." % ( FILE_PATH ))
     except (
