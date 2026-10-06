@@ -44,8 +44,8 @@ def process_single_srr(
         )
         return True
 
-    
-        prefetch_ok = run_cmd.run_prefetch(srr, max_size)
+
+        prefetch_ok = run_cmd.run_prefetch(srr)
         if not prefetch_ok:
             log_.err(
                 "%s: Prefetch failed, skipping conversion." % ( srr )
