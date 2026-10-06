@@ -24,7 +24,7 @@ def is_downloaded(srr: str, OUT_DIR: Path) -> bool:
 
     return False
 
-def remove_file(log: Logger, FILE_PATH: Path) -> None:
+def remove_file(log: Logger, FILE_PATH: Path) -> bool:
     try:
         if isfile(FILE_PATH):
             remove(FILE_PATH)
@@ -42,6 +42,10 @@ def remove_file(log: Logger, FILE_PATH: Path) -> None:
         log.err(
             "Cannot remove %s" % ( FILE_PATH ), err_
         )
+    else:
+        return True
+
+    return False
 
 
 def check_dir(log_: Logger, PATH_ARR: list[Path]) -> list[Path]:
