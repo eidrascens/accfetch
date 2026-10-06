@@ -10,6 +10,7 @@ from src.commands.run_cmd import RunCMD
 from src.utils.compress import compression
 from src.utils.log.custom_logger import Logger
 from src.utils.state import State
+from src.utils.misc.housekeeping import is_downloaded, remove_file
 
 
 def process_single_srr(
@@ -103,15 +104,9 @@ def process_single_srr(
                 "Compression failed for %s" % ( compressed_files )
             )
             return False
-    try:
-        if isfile(SRA_FILE):
-            remove(SRA_FILE)
-            log_.info("Removed %s" % ( SRA_FILE ))
-        elif isdir(SRA_DIR):
-            rmtree(SRA_DIR)
-            log_.info("Removed directory %s" % ( SRA_DIR ))
-    except (OSError, FileNotFoundError) as err_:
-        log_.warn("%s: Failed to remove .sra" % ( srr ), err_)
+
+    if not remove_file(log_, SRA_FILE) or not remove_file(log_, SRA_DIR):
+        log_.warn("%s: Failed to remove .sra" % ( srr ),)
 
     return True
 
