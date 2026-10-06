@@ -31,8 +31,6 @@ class State:
         try:
             self.STATE_FILE: Path = OUT_DIR / state_file_name
             if not exists(self.STATE_FILE):
-
-
                 self.log_.info("%s does not exists" % ( self.STATE_FILE ))
                 raise TypeError
         except TypeError as _:
@@ -46,8 +44,6 @@ class State:
         self.state: dict[str, dict[str, str | Path]] = {}
 
     def create_state_file(self: Self) -> None:
-
-
         self.log_.info(
             "Creating new state file: %s" % ( self.STATE_FILE )
         )
@@ -94,8 +90,6 @@ class State:
             self.state = loads(f"{self.state}")
 
         return self.state
-
-
 
     def _save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
