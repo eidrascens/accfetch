@@ -56,17 +56,12 @@ class RunCMD:
 
         return False
 
-    def run_prefetch(
-        self: Self,
-        srr: str,
-        max_size: int,
-        CMD_LOG: Path
-    ) -> bool:
+    def run_prefetch(self: Self, srr: str) -> bool:
         """Run prefetch for one SRR, logging to a file.
 
         Returns True on success.
         """
-        prefetch_cmd = self.cmd.build_prefetch_cmd(srr, max_size)
+        prefetch_cmd = self.cmd.build_prefetch_cmd(srr)
         self.log_.info("Running prefetch for %s: %s" % (
                 srr, prefetch_cmd
             )
