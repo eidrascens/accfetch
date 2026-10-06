@@ -4,6 +4,7 @@ from typing import Self
 
 from src.commands.cmd_builder import BuildCMD
 from src.utils.log.custom_logger import Logger
+from src.utils.state import State
 
 
 class RunCMD:
@@ -12,9 +13,12 @@ class RunCMD:
             log_: Logger,
             OUT_DIR: Path,
             conda_env: str,
+            state: State,
             CMD_LOG: Path
         ) -> None:
         self.log_: Logger = log_
+        self.OUT_DIR: Path = OUT_DIR
+        self.state: State = state
         self.cmd: BuildCMD = BuildCMD(log_, OUT_DIR, conda_env)
         self.CMD_LOG: Path = CMD_LOG
 
@@ -53,6 +57,7 @@ class RunCMD:
                 ), err_
             )
         else:
+            self.state.update_state(srr, "FD", sra_path)
             return True
 
         return False
@@ -91,6 +96,9 @@ class RunCMD:
                 ), err_
             )
         else:
+            self.state.update_state(
+                srr, "PF", self.OUT_DIR / srr
+            )
             return True
 
         return False
