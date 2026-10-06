@@ -103,7 +103,7 @@ class State:
         """Update state for a given SRR."""
         self.state[srr] = {
             "status": status,
-            "path": SRR_PATH
+            "path": str(SRR_PATH)
         }
         self._save_state()
 
