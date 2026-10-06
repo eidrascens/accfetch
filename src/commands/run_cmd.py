@@ -8,10 +8,11 @@ from src.utils.log.custom_logger import Logger
 
 class RunCMD:
     def __init__(
-            self: Self, log_: Logger, OUT_DIR: Path, conda_env: Path
+            CMD_LOG: Path
         ) -> None:
         self.log_: Logger = log_
         self.cmd: BuildCMD = BuildCMD(log_, OUT_DIR, conda_env)
+        self.CMD_LOG: Path = CMD_LOG
 
     def run_fasterq_dump(
         self: Self,
@@ -30,7 +31,7 @@ class RunCMD:
             )
         )
         try:
-            with open(CMD_LOG, "a", encoding="utf-8") as log_f_:
+            with open(self.CMD_LOG, "a", encoding="utf-8") as log_f_:
                 result = run(
                         fasterq_dump_cmd,
                         stdout=log_f_,
@@ -47,7 +48,7 @@ class RunCMD:
         except (RuntimeError, CalledProcessError) as err_:
             self.log_.err(
                 "fasterq-dump failed for %s (log: %s)" % (
-                    srr, CMD_LOG
+                    srr, self.CMD_LOG
                 ), err_
             )
         else:
@@ -72,7 +73,7 @@ class RunCMD:
         )
         try:
 
-            with open(CMD_LOG, "a", encoding="utf-8") as log_f_:
+            with open(self.CMD_LOG, "a", encoding="utf-8") as log_f_:
                 result = run(
                         prefetch_cmd,
                         stdout=log_f_,
@@ -90,7 +91,7 @@ class RunCMD:
         except (RuntimeError, CalledProcessError) as err_:
             self.log_.err(
                 "prefetch failed for %s (log: %s)" % (
-                    srr, CMD_LOG
+                    srr, self.CMD_LOG
                 ), err_
             )
         else:
