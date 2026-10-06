@@ -16,7 +16,7 @@ def process_single_srr(
     log_: Logger,
     srr: str,
     OUT_DIR: Path,
-    conda_env: Path,
+    conda_env: str,
     max_size: int,
     state: State,
     CMD_LOG: Path
