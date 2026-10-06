@@ -80,8 +80,11 @@ class State:
                     self.STATE_FILE
                 ), err_
             )
+            self.state = loads(f"{self.state}")
 
-        return loads(f"{self.state}")
+        return self.state
+
+
 
     def _save_state(self: Self) -> None:
         """Save state to JSON file atomically."""
