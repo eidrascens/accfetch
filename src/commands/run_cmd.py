@@ -19,8 +19,8 @@ class RunCMD:
         self.log_: Logger = log_
         self.OUT_DIR: Path = OUT_DIR
         self.state: State = state
-        self.cmd: BuildCMD = BuildCMD(log_, OUT_DIR, conda_env)
         self.CMD_LOG: Path = CMD_LOG
+        self.cmd: BuildCMD = BuildCMD(log_, OUT_DIR, conda_env)
 
     def run_fasterq_dump(
         self: Self, srr: str, sra_path: Path
