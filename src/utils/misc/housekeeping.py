@@ -7,20 +7,21 @@ from src.utils.log.custom_logger import Logger
 
 def is_downloaded(srr: str, OUT_DIR: Path) -> bool:
     """Check if a .sra file or directory for the given SRR exists."""
-    return exists(
-            OUT_DIR / f"{srr}.sra"
-        ) or isdir(
-            OUT_DIR / srr
-        ) or (
-            exists(
-                OUT_DIR / f"{srr}_1.fastq.gz"
-            ) and exists(
-                OUT_DIR / f"{srr}_2.fastq.gz"
-            )
-        ) or exists(
-            OUT_DIR / f"{srr}.fastq.gz"
-        )
 
+    if exists(
+            OUT_DIR / srr / f"{srr}_1.fastq.gz"
+        ) and exists(
+            OUT_DIR / srr / f"{srr}_2.fastq.gz"
+        ):
+        return True
+
+    for file_ in [
+            "_1.fastq.gz", ".sra", ".fastq.gz", ".fastq", "_1.fastq"
+        ]:
+        if exists(OUT_DIR / srr / f"{srr}.{file_}"):
+            return True
+
+    return False
 
 def remove_file(log: Logger, FILE_PATH: Path) -> None:
     try:
