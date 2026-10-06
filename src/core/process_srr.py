@@ -27,7 +27,7 @@ def process_single_srr(
     Full pipeline for one SRR: (optional) prefetch -> (optional) fasterq-dump ->
     (optional) compress -> cleanup. Uses state file to skip completed steps.
     """
-    run_cmd: RunCMD = RunCMD(log_, OUT_DIR, conda_env)
+    run_cmd: RunCMD = RunCMD(log_, OUT_DIR, conda_env, CMD_LOG)
 
     SRA_FILE: Path = OUT_DIR / f"{srr}.sra"
     SRA_DIR: Path = OUT_DIR / srr
@@ -44,12 +44,8 @@ def process_single_srr(
         )
         return True
 
-    # 1. Prefetch (only if enabled)
-    prefetch_done = state.get_state(srr)
-    if not prefetch_done:
-        prefetch_ok = run_cmd.run_prefetch(
-                srr, max_size, CMD_LOG
-            )
+    
+        prefetch_ok = run_cmd.run_prefetch(srr, max_size)
         if not prefetch_ok:
             log_.err(
                 "%s: Prefetch failed, skipping conversion." % ( srr )
@@ -74,11 +70,7 @@ def process_single_srr(
             "%s: Conversion already done (from state)." % ( srr )
         )
 
-    if not run_cmd.run_fasterq_dump(
-            srr,
-            SRA_FILE,
-            CMD_LOG
-        ):
+    if not run_cmd.run_fasterq_dump(srr, SRA_FILE):
         log_.err(
             "%s: fasterq-dump failed, keeping .sra for retry." % (
                 srr
