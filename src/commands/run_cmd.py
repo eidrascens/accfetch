@@ -15,10 +15,7 @@ class RunCMD:
         self.CMD_LOG: Path = CMD_LOG
 
     def run_fasterq_dump(
-        self: Self,
-        srr: str,
-        sra_path: Path,
-        CMD_LOG: Path
+        self: Self, srr: str, sra_path: Path
     ) -> bool:
         """Run fasterq-dump on the .sra file, logging to a file.
 
