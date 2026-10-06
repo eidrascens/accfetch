@@ -24,7 +24,7 @@ def is_downloaded(srr: str, OUT_DIR: Path) -> bool:
 
     return False
 
-def remove_file(log: Logger, FILE_PATH: Path) -> bool:
+def remove_file(log_: Logger, FILE_PATH: Path) -> bool:
     try:
         if isfile(FILE_PATH):
             remove(FILE_PATH)
@@ -33,13 +33,13 @@ def remove_file(log: Logger, FILE_PATH: Path) -> bool:
         else:
             raise OSError
     except FileNotFoundError as _:
-        log.info("%s does not exist." % ( FILE_PATH ))
+        log_.info("%s does not exist." % ( FILE_PATH ))
     except (
         OSError,
         PermissionError,
         SystemError
     ) as err_:
-        log.err(
+        log_.err(
             "Cannot remove %s" % ( FILE_PATH ), err_
         )
     else:
