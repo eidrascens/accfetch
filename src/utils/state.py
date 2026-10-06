@@ -66,7 +66,8 @@ class State:
         """Load state from JSON file."""
 
         try:
-            self.create_state_file()
+            if not exists(self.STATE_FILE):
+                self.create_state_file()
             with open(
                     self.STATE_FILE,
                     "r",
