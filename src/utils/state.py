@@ -46,8 +46,7 @@ class State:
         self.state: dict[str, dict[str, str | Path]] = {}
 
     def create_state_file(self: Self) -> None:
-        if exists(self.STATE_FILE):
-            raise FileExistsError
+
 
         self.log_.info(
             "Creating new state file: %s" % ( self.STATE_FILE )
