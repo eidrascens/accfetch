@@ -108,7 +108,7 @@ class State:
         self._save_state()
 
     def get_state(
-            self: Self, srr: str
-        ) -> dict[str, str | Path]:
+            self: Self, srr: str, state_property: str
+        ) -> str | Path:
         """Get state value for SRR and key."""
-        return self.state.get(srr, {})
+        return self.state.get(srr, {}).get(state_property, "")
