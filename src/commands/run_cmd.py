@@ -8,6 +8,10 @@ from src.utils.log.custom_logger import Logger
 
 class RunCMD:
     def __init__(
+            self: Self,
+            log_: Logger,
+            OUT_DIR: Path,
+            conda_env: str,
             CMD_LOG: Path
         ) -> None:
         self.log_: Logger = log_
