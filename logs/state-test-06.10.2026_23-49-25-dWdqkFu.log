@@ -1,0 +1,4 @@
+INFO Setup of logger complete, started /var/home/aeersriv/Code.eidrascens/rice_rnaSeq_meta_analysis/test/../logs/state-test-06.10.2026_23-49-25-dWdqkFu.log Tuesday 06/October/2026 23:49:25 +0800 PST
+INFO Reading state file /var/home/aeersriv/Code.eidrascens/rice_rnaSeq_meta_analysis/test/../.state_file-06.10.26_23-49
+INFO Retrieving the state property status of TEST1
+INFO Updating state of TEST2 with values FD, /test/path/for/test2
