@@ -23,14 +23,21 @@ class State:
     def __init__(
             self: Self,
             log_: Logger,
-            OUT_DIR: Path
+            OUT_DIR: Path,
+            state_file_name: str
         ) -> None:
         self.log_: Logger = log_
-        self.STATE_FILE: Path = OUT_DIR / (
-                ".state_file-%s" % (
-                    vsdate(no_spaces=True)
+        try:
+            self.STATE_FILE: Path = OUT_DIR / state_file_name
+            if not exists(self.STATE_FILE):
+                
+                raise TypeError
+        except TypeError as _:
+            self.STATE_FILE: Path = OUT_DIR / (
+                    ".state_file-%s" % (
+                        vsdate(no_spaces=True)
+                    )
                 )
-            )
         self.state: dict[str, dict[str, str | Path]] = {}
 
     def create_state_file(self: Self) -> None:
