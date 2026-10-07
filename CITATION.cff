@@ -1,5 +1,6 @@
 cff-version: 1.2.0
-title: srafetch
+title: accfetch
+abstract: A glorified Python pipeline for fetching runs from the provided accession code. 
 # version: 0.1
 message: >-
   If you use this software, please cite it using the
