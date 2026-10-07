@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# SRA pipeline temp and output
+*.log
+fasterq.tmp.*
+*.sra
+*.fastq
+*.fastq.gz
+
+# OS
+.DS_Store
+    

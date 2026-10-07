@@ -1,0 +1,10 @@
+{
+    "TEST2": {
+        "status": "FD",
+        "path": "/test/path/for/test2"
+    },
+    "TEST1": {
+        "status": "PF",
+        "path": "/test/path/for/test1"
+    }
+}

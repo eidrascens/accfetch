@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+title: accfetch
+abstract: A glorified Python pipeline for fetching runs from the provided accession code. 
+# version: 0.1
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Atracēla
+    famila-names: Eculantia
+    alias: eidrascens
+    email: atracela.eculantia@protonmail.com
+    affiliation: Independent
+    orcid: "https://orcid.org/0009-0000-8486-6677"
+  - given-names: Gerry
+    name-suffix: Jr.
+    family-names: Ramos
+    alias: gramosjr
+    email: ramosjrgerry13@gmail.com
+    affiliation: Philippine Genome Center Mindanao
+contact:
+  - email: atracela.eculantia@protonmail.com
+    family-names: Eculantia
+    given-names: Atracēla
+# identifiers:
+#   - description: "DOI of the work."
+#     type: doi
+#     value:
+repository-code: "https://github.com/eidrascens/rice_rnaSeq_meta_analysis"
+repository: "https://github.com/eidrascens/rice_rnaSeq_meta_analysis"
+keywords:
+  - SRA
+  - FASTQ
+  - NCBI
+  - fetchngs
+license: GPL-3.0-or-later
